@@ -103,7 +103,7 @@ export async function completeOAuth(search: string): Promise<OAuthSession | null
     redirect_uri: doctorConfig.redirectUri,
     code_verifier: transaction.verifier,
   });
-  window.history.replaceState({}, document.title, doctorConfig.redirectUri);
+  window.history.replaceState({}, document.title, new URL(doctorConfig.redirectUri).pathname);
   return session;
 }
 
