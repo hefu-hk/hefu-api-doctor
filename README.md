@@ -2,6 +2,9 @@
 
 A local-first browser tool for AI API configuration and controlled compatibility diagnostics.
 
+- Live tool: https://hefu.hk/api-doctor/
+- Repository: https://github.com/hefu-hk/hefu-api-doctor
+
 ## What it does
 
 - Generates configuration for Codex CLI, Claude Code, Cline, cURL, Python and Node.js.
