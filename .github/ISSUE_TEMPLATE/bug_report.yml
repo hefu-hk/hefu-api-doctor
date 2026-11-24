@@ -1,0 +1,25 @@
+name: Bug report
+description: Report a reproducible problem without credentials or private content
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never include API keys, OAuth tokens, client secrets, prompts, model output or customer data. Use the safe JSON report after verifying its contents.
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and reproduction steps
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Tool version or commit
+    validations:
+      required: true
