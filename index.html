@@ -6,11 +6,28 @@
     <meta name="theme-color" content="#0b1720" />
     <meta name="description" content="Verify AI API compatibility, generate client configuration, and export safe diagnostics without sharing your prompts or credentials." />
     <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://hefu.hk/api-doctor/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="HeFu API Doctor — AI API compatibility diagnostics" />
+    <meta property="og:description" content="Generate client configuration and run controlled Chat Completions, Responses and Anthropic Messages checks with safe reports." />
+    <meta property="og:url" content="https://hefu.hk/api-doctor/" />
     <link rel="icon" type="image/svg+xml" href="/api-doctor/favicon.svg" />
     <title>HeFu API Doctor — Verify your AI API before your users do</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main>
+        <h1>HeFu API Doctor</h1>
+        <p>Verify AI API compatibility, generate client configuration, and troubleshoot protocol errors without putting credentials, prompts or model output into diagnostic reports.</p>
+        <h2>Controlled AI API compatibility checks</h2>
+        <p>Connect a HeFu account with OAuth and PKCE, review the models available to your application, and explicitly run one minimal request at a time for OpenAI Chat Completions, OpenAI Responses or Anthropic Messages. Custom OpenAI-compatible endpoints support a basic Chat Completions check.</p>
+        <h2>Client configuration generator</h2>
+        <p>Create copyable starting points for Codex CLI, Claude Code, Cline, cURL, Python and Node.js. Generated examples use your own API key and never insert OAuth tokens.</p>
+        <h2>Privacy and billing</h2>
+        <p>OAuth tokens stay in page memory. Reports contain only allowlisted status and timing fields. Software access is free; live model requests may be billed and always require explicit confirmation.</p>
+        <p><a href="/api-doctor/">Open API Doctor</a> · <a href="/docs">Read the API documentation</a> · <a href="/models">Browse available models</a></p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

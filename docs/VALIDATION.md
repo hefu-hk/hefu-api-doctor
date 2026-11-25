@@ -12,6 +12,13 @@
 
 All automated external API calls were mocked. No automated test incurred model charges.
 
+## 2026-11-25 version 0.1.1 growth audit
+
+- Added canonical/Open Graph metadata, crawler-readable fallback body and `/api-doctor/sitemap.xml`.
+- OAuth authorization URLs now carry `utm_source=api-doctor`, `utm_medium=open-source` and `utm_campaign=api-doctor-activation` while preserving PKCE and minimal scopes.
+- Unit tests: **24 passed**. Development and production-preview Chromium suites: **6 passed each**, including the new attribution assertion.
+- Main sitemap includes the tool only for HK hosts; CN is unchanged.
+
 ## 2026-11-24 HK production acceptance
 
 - Production URL: `https://hefu.hk/api-doctor/`; homepage, models, health and static assets return 200, missing assets return 404, and the bare path redirects to the trailing-slash URL.

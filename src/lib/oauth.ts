@@ -75,6 +75,9 @@ export async function beginOAuth(): Promise<void> {
     redirect_uri: doctorConfig.redirectUri,
     state,
     scope: SCOPES,
+    utm_source: "api-doctor",
+    utm_medium: "open-source",
+    utm_campaign: "api-doctor-activation",
     code_challenge: challenge,
     code_challenge_method: method,
   });

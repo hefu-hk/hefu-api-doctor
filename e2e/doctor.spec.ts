@@ -106,3 +106,20 @@ test("failed responses remain actionable and never expose raw output", async ({ 
   await expect(page.locator(".result-detail")).not.toContainText("sk-secret");
   await expect(page.locator(".result-detail")).not.toContainText("upstream.example");
 });
+
+
+test("OAuth start preserves PKCE and adds source attribution", async ({ page }) => {
+  await page.route("**/oauth/authorize?*", async (route) => {
+    await route.fulfill({ status: 200, contentType: "text/html", body: "<html><body>OAuth test destination</body></html>" });
+  });
+  await page.goto("./");
+  await page.getByRole("button", { name: "Connect with HeFu" }).click();
+  await page.waitForURL(/\/oauth\/authorize/);
+  const url = new URL(page.url());
+  expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+  expect(url.searchParams.get("code_challenge")).toBeTruthy();
+  expect(url.searchParams.get("scope")).toBe("ext_api ext_models:read");
+  expect(url.searchParams.get("utm_source")).toBe("api-doctor");
+  expect(url.searchParams.get("utm_medium")).toBe("open-source");
+  expect(url.searchParams.get("utm_campaign")).toBe("api-doctor-activation");
+});

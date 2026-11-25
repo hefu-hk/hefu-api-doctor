@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 — 2026-11-25
+
+- Add canonical and Open Graph metadata, crawler-readable fallback content and a standalone sitemap.
+- Add `api-doctor` UTM attribution to OAuth registration and activation paths.
+- Clear OAuth callback parameters on the current origin for compatible self-hosted deployments.
+
 ## 0.1.0 — 2026-11-24
 
 Initial validation release:
