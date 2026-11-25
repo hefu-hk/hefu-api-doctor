@@ -43,3 +43,20 @@ All automated external API calls were mocked. No automated test incurred model c
 - Mocked demo: **60.8 seconds**, 960×540, approximately **4.1 MB**, with an explicit no-billable-request badge.
 - `npm audit` against the official npm registry: **0 vulnerabilities** at validation time.
 - All external requests in automated tests and the demo were mocked. **No real model request was made and no model cost was incurred** for this release-candidate audit. Real OAuth and three-protocol production acceptance remains a separate release gate.
+
+## 2026-11-25 version 0.2.0 production acceptance
+
+- HK static release `20261125T052803` passed anonymous production checks, including English and Chinese UI, configuration generation, responsive layouts, static assets and error routes.
+- Real OAuth/PKCE and authorized model discovery passed. Chat Completions, Responses and Anthropic Messages each ran exactly once against `deepseek-v4-flash` with a 32-token output cap; all three passed without retries.
+- Production billing recorded exactly **3 requests and 102 tokens**, with a user cost of **0.000113 USD**.
+
+## 2026-11-25 version 0.2.1 compact workspace
+
+- Reduced desktop display typography from at most 62 px to 44 px and mobile display typography from 37 px to 30 px; tightened header, panel, form and result spacing.
+- Combined connection and protocol setup into one workspace, reduced the empty-result footprint and kept connection choices side by side on mobile.
+- Unit tests: **39 passed**. Development-server Chromium E2E: **10 passed**. Production-build preview Chromium E2E: **10 passed**, including new desktop/mobile information-density checks.
+- English and Chinese visual checks at **320, 375, 768, 1024 and 1440 px** found no horizontal overflow or browser page errors. Custom-endpoint results and configuration generation were also visually reviewed.
+- At 1440×1000 and 375×812, the Chinese page height decreased from approximately **1781 to 1256 px** and **2395 to 1716 px**, respectively, in the final production-build visual matrix.
+- Refreshed mocked demo: **60.68 seconds**, 960×540, approximately **4.52 MB**, with an explicit no-billable-request badge.
+- `npm audit` against the official npm registry: **0 vulnerabilities** at validation time.
+- This release changes presentation and layout tests only. Automated checks and the refreshed demo used mocks; **no additional real model request or cost was incurred**.

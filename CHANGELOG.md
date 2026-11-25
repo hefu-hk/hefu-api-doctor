@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 — 2026-11-25
+
+- Refine the visual hierarchy with smaller display and interface typography, tighter spacing and quieter surfaces.
+- Combine connection and protocol setup into one compact workspace and reduce the empty-result footprint.
+- Keep connection choices side by side on mobile while preserving touch-sized controls and overflow-free layouts.
+- Add browser regression checks for desktop and mobile information density.
+
 ## 0.2.0 — 2026-11-25
 
 - Add custom-endpoint model discovery, Responses checks and keyless loopback support with an Ollama preset.

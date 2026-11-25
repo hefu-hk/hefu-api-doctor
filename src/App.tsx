@@ -354,68 +354,69 @@ export default function App() {
         {tab === "diagnose" ? (
           <div className="diagnostic-layout" id="diagnose-panel" role="tabpanel" aria-labelledby="diagnose-tab">
             <div className="control-stack">
-              <section className="panel">
-                <h2>{t("connectionTitle")}</h2>
-                <div className="segmented">
-                  <button aria-pressed={connection === "hefu"} className={connection === "hefu" ? "active" : ""} onClick={() => selectConnection("hefu")}>{t("hefuConnection")}</button>
-                  <button aria-pressed={connection === "custom"} className={connection === "custom" ? "active" : ""} onClick={() => selectConnection("custom")}>{t("customConnection")}</button>
-                </div>
-                <p className="muted">{connection === "hefu" ? t("hefuConnectionDescription") : t("customConnectionDescription")}</p>
-                {connection === "hefu" ? (
-                  <div className="oauth-box">
-                    {session ? (
-                      <>
-                        <div className="connected-line"><span className="status-dot" />{t("connected")}</div>
-                        <div className="button-row">
-                          <button className="button secondary" onClick={disconnect}>{t("disconnect")}</button>
-                          <button className="button secondary" onClick={() => setModelsRevision((value) => value + 1)} disabled={modelsLoading}>{t("reloadModels")}</button>
-                          <a className="text-link" href={hefuLink("/dashboard/oauth")} target="_blank" rel="noreferrer">{t("revokeHint")}</a>
-                        </div>
-                        {modelsLoading && <p className="muted">{t("loadingModels")}</p>}
-                        {!modelsLoading && availableModels.length > 0 && <p className="success-text">{availableModels.length} {t("modelsLoaded")}</p>}
-                        {!modelsLoading && availableModels.length === 0 && <p className="notice">{t("noCompatibleModels")}</p>}
-                      </>
-                    ) : (
-                      <button className="button primary" onClick={connect} disabled={!oauthConfigured}>{t("connect")}</button>
-                    )}
-                    {!session && !oauthConfigured && <p className="notice">{t("oauthNotConfigured")}</p>}
+              <section className="panel setup-panel">
+                <div className="setup-section">
+                  <h2>{t("connectionTitle")}</h2>
+                  <div className="segmented">
+                    <button aria-pressed={connection === "hefu"} className={connection === "hefu" ? "active" : ""} onClick={() => selectConnection("hefu")}>{t("hefuConnection")}</button>
+                    <button aria-pressed={connection === "custom"} className={connection === "custom" ? "active" : ""} onClick={() => selectConnection("custom")}>{t("customConnection")}</button>
                   </div>
-                ) : (
-                  <div className="form-grid">
-                    <label>{t("baseUrl")}<input value={customBaseUrl} onChange={(event) => { setCustomBaseUrl(event.target.value); setCustomModelIds([]); invalidateCheck(); }} placeholder="https://provider.example/v1" autoComplete="url" /></label>
-                    <label>{isLoopbackBaseUrl(customBaseUrl) ? t("apiKeyOptional") : t("apiKey")}<input type="password" value={customApiKey} onChange={(event) => { setCustomApiKey(event.target.value); invalidateCheck(); }} placeholder={t("apiKeyPlaceholder")} autoComplete="off" /></label>
-                    <div className="button-row">
-                      <button className="button secondary" onClick={useOllama}>{t("localOllama")}</button>
-                      <button className="button secondary" onClick={loadCustomModels} disabled={customModelsLoading || !customBaseUrl.trim()}>{customModelsLoading ? t("loadingModels") : t("loadCustomModels")}</button>
-                    </div>
-                    <p className="muted small">{t("modelDiscoveryHint")} {t("corsHint")}</p>
-                  </div>
-                )}
-              </section>
-
-              <section className="panel">
-                <h2>{t("protocolTitle")}</h2>
-                <div className="form-grid">
+                  <p className="muted">{connection === "hefu" ? t("hefuConnectionDescription") : t("customConnectionDescription")}</p>
                   {connection === "hefu" ? (
-                    <label>{t("model")}
-                      <select value={selectedModel} onChange={(event) => { setSelectedModel(event.target.value); setConfigModel(event.target.value); invalidateCheck(); }} disabled={!session || modelsLoading}>
-                        <option value="">{t("selectModel")}</option>
-                        {availableModels.map((model) => <option key={model.id} value={model.id}>{modelLabel(model)}</option>)}
+                    <div className="oauth-box">
+                      {session ? (
+                        <>
+                          <div className="connected-line"><span className="status-dot" />{t("connected")}</div>
+                          <div className="button-row">
+                            <button className="button secondary" onClick={disconnect}>{t("disconnect")}</button>
+                            <button className="button secondary" onClick={() => setModelsRevision((value) => value + 1)} disabled={modelsLoading}>{t("reloadModels")}</button>
+                            <a className="text-link" href={hefuLink("/dashboard/oauth")} target="_blank" rel="noreferrer">{t("revokeHint")}</a>
+                          </div>
+                          {modelsLoading && <p className="muted">{t("loadingModels")}</p>}
+                          {!modelsLoading && availableModels.length > 0 && <p className="success-text">{availableModels.length} {t("modelsLoaded")}</p>}
+                          {!modelsLoading && availableModels.length === 0 && <p className="notice">{t("noCompatibleModels")}</p>}
+                        </>
+                      ) : (
+                        <button className="button primary" onClick={connect} disabled={!oauthConfigured}>{t("connect")}</button>
+                      )}
+                      {!session && !oauthConfigured && <p className="notice">{t("oauthNotConfigured")}</p>}
+                    </div>
+                  ) : (
+                    <div className="form-grid">
+                      <label>{t("baseUrl")}<input value={customBaseUrl} onChange={(event) => { setCustomBaseUrl(event.target.value); setCustomModelIds([]); invalidateCheck(); }} placeholder="https://provider.example/v1" autoComplete="url" /></label>
+                      <label>{isLoopbackBaseUrl(customBaseUrl) ? t("apiKeyOptional") : t("apiKey")}<input type="password" value={customApiKey} onChange={(event) => { setCustomApiKey(event.target.value); invalidateCheck(); }} placeholder={t("apiKeyPlaceholder")} autoComplete="off" /></label>
+                      <div className="button-row">
+                        <button className="button secondary" onClick={useOllama}>{t("localOllama")}</button>
+                        <button className="button secondary" onClick={loadCustomModels} disabled={customModelsLoading || !customBaseUrl.trim()}>{customModelsLoading ? t("loadingModels") : t("loadCustomModels")}</button>
+                      </div>
+                      <p className="muted small">{t("modelDiscoveryHint")} {t("corsHint")}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="setup-section">
+                  <h2>{t("protocolTitle")}</h2>
+                  <div className="form-grid">
+                    {connection === "hefu" ? (
+                      <label>{t("model")}
+                        <select value={selectedModel} onChange={(event) => { setSelectedModel(event.target.value); setConfigModel(event.target.value); invalidateCheck(); }} disabled={!session || modelsLoading}>
+                          <option value="">{t("selectModel")}</option>
+                          {availableModels.map((model) => <option key={model.id} value={model.id}>{modelLabel(model)}</option>)}
+                        </select>
+                      </label>
+                    ) : (
+                      <label>{t("model")}<input list="custom-model-ids" value={customModel} onChange={(event) => { setCustomModel(event.target.value); invalidateCheck(); }} placeholder={t("modelPlaceholder")} /></label>
+                    )}
+                    <datalist id="custom-model-ids">{customModelIds.map((id) => <option key={id} value={id} />)}</datalist>
+                    <label>{t("protocol")}
+                      <select value={protocol} onChange={(event) => { setProtocol(event.target.value as Protocol); invalidateCheck(); }} disabled={allowedProtocols.length === 0}>
+                        {allowedProtocols.map((item) => <option key={item} value={item}>{protocolText(item)}</option>)}
                       </select>
                     </label>
-                  ) : (
-                    <label>{t("model")}<input list="custom-model-ids" value={customModel} onChange={(event) => { setCustomModel(event.target.value); invalidateCheck(); }} placeholder={t("modelPlaceholder")} /></label>
-                  )}
-                  <datalist id="custom-model-ids">{customModelIds.map((id) => <option key={id} value={id} />)}</datalist>
-                  <label>{t("protocol")}
-                    <select value={protocol} onChange={(event) => { setProtocol(event.target.value as Protocol); invalidateCheck(); }} disabled={allowedProtocols.length === 0}>
-                      {allowedProtocols.map((item) => <option key={item} value={item}>{protocolText(item)}</option>)}
-                    </select>
-                  </label>
-                  {selectedModelInfo && connection === "hefu" && (
-                    <div className="capability-row"><span>{t("supportedProtocols")}</span><div>{modelProtocols(selectedModelInfo).map((item) => <span className="capability" key={item}>{item}</span>)}</div></div>
-                  )}
-                  {!protocolAdvertised && <p className="notice">{t("protocolUnsupported")}</p>}
+                    {selectedModelInfo && connection === "hefu" && (
+                      <div className="capability-row"><span>{t("supportedProtocols")}</span><div>{modelProtocols(selectedModelInfo).map((item) => <span className="capability" key={item}>{item}</span>)}</div></div>
+                    )}
+                    {!protocolAdvertised && <p className="notice">{t("protocolUnsupported")}</p>}
+                  </div>
                 </div>
               </section>
 

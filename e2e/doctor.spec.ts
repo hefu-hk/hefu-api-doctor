@@ -34,6 +34,25 @@ test("generates configuration without login and supports Chinese and mobile", as
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
+test("keeps the workspace compact on desktop and mobile", async ({ page }) => {
+  await page.goto("./");
+  const titleSize = () => page.locator("h1").evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+  const emptyHeight = () => page.locator(".empty-state").evaluate((element) => element.getBoundingClientRect().height);
+  expect(await titleSize()).toBeLessThanOrEqual(44);
+  expect(await emptyHeight()).toBeLessThanOrEqual(300);
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  expect(await titleSize()).toBeLessThanOrEqual(30);
+  expect(await emptyHeight()).toBeLessThanOrEqual(160);
+  const connectionButtons = await page.locator(".segmented button").all();
+  const firstBox = await connectionButtons[0].boundingBox();
+  const secondBox = await connectionButtons[1].boundingBox();
+  expect(firstBox).not.toBeNull();
+  expect(secondBox).not.toBeNull();
+  expect(Math.abs(firstBox!.y - secondBox!.y)).toBeLessThan(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test("custom endpoint check sends one request and exports a credential-free report", async ({ page }) => {
   let calls = 0;
   await page.route("https://provider.example/v1/chat/completions", async (route) => {
