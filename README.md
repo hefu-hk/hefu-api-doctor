@@ -8,6 +8,8 @@ A local-first browser tool for AI API configuration, model discovery and control
 - GitHub: https://github.com/hefu-hk/hefu-api-doctor
 - Gitee mirror: https://gitee.com/hefu-oss/hefu-api-doctor
 - 60-second mocked demo: [docs/demo.webm](docs/demo.webm)
+- LLM-friendly product index: https://hefu.hk/api-doctor/llms.txt
+- Markdown product overview: https://hefu.hk/api-doctor/index.md
 
 ## What it does
 
@@ -29,7 +31,7 @@ The software is open source. Model API usage is not necessarily free: every live
 1. Select **OpenAI-compatible** and enter the provider base URL, usually ending in `/v1`.
 2. Enter an API key for a public provider. For a local Ollama server, use **Use local Ollama**; the key can remain empty.
 3. Optionally select **Load model IDs**, or enter the exact model ID manually.
-4. Select Chat Completions or Responses, then run **Validate setup — free**.
+4. Select Chat Completions or Responses, then run **Run free preflight**.
 5. Review the provider's price, explicitly consent and run one live check.
 6. Select **Generate client setup** after a successful check.
 

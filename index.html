@@ -3,29 +3,106 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0b1720" />
-    <meta name="description" content="Verify AI API compatibility, generate client configuration, and export safe diagnostics without sharing your prompts or credentials." />
-    <meta name="robots" content="index,follow" />
+    <meta name="theme-color" content="#f4f7f7" />
+    <meta name="color-scheme" content="light" />
+    <meta name="application-name" content="HeFu API Doctor" />
+    <meta name="description" content="Free open-source AI API compatibility checker for Chat Completions, Responses and Anthropic Messages. Validate models, generate client configs and export safe reports." />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
     <link rel="canonical" href="https://hefu.hk/api-doctor/" />
+    <link rel="describedby" href="/llms.txt" />
+    <link rel="alternate" type="text/markdown" href="/index.md" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="HeFu API Doctor — AI API compatibility diagnostics" />
-    <meta property="og:description" content="Generate client configuration and run controlled Chat Completions, Responses and Anthropic Messages checks with safe reports." />
+    <meta property="og:site_name" content="HeFu API Doctor" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+    <meta property="og:title" content="AI API Compatibility Checker | HeFu API Doctor" />
+    <meta property="og:description" content="Free open-source AI API compatibility checker for Chat Completions, Responses and Anthropic Messages. Validate models, generate client configs and export safe reports." />
     <meta property="og:url" content="https://hefu.hk/api-doctor/" />
+    <meta property="og:image" content="https://hefu.hk/api-doctor/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="HeFu API Doctor — verify AI API compatibility and generate client configuration" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AI API Compatibility Checker | HeFu API Doctor" />
+    <meta name="twitter:description" content="Free open-source AI API compatibility checker for Chat Completions, Responses and Anthropic Messages. Validate models, generate client configs and export safe reports." />
+    <meta name="twitter:image" content="https://hefu.hk/api-doctor/og-image.png" />
+    <meta name="twitter:image:alt" content="HeFu API Doctor — AI API compatibility checker" />
     <link rel="icon" type="image/svg+xml" href="/api-doctor/favicon.svg" />
-    <title>HeFu API Doctor — Verify your AI API before your users do</title>
+    <title>AI API Compatibility Checker | HeFu API Doctor</title>
+    <script type="application/ld+json" id="software-schema">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "HeFu API Doctor",
+        "alternateName": "合富宝 API Doctor",
+        "description": "Free open-source AI API compatibility checker for Chat Completions, Responses and Anthropic Messages. Validate models, generate client configs and export safe reports.",
+        "url": "https://hefu.hk/api-doctor/",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any modern web browser",
+        "browserRequirements": "Requires JavaScript and a modern web browser.",
+        "softwareVersion": "0.2.2",
+        "dateModified": "2026-11-25",
+        "inLanguage": ["en", "zh-CN"],
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "codeRepository": "https://github.com/hefu-hk/hefu-api-doctor",
+        "sameAs": ["https://github.com/hefu-hk/hefu-api-doctor", "https://gitee.com/hefu-oss/hefu-api-doctor"],
+        "maintainer": { "@type": "Organization", "name": "HeFu", "url": "https://hefu.hk/" },
+        "featureList": [
+          "OpenAI Chat Completions, OpenAI Responses and Anthropic Messages compatibility checks",
+          "Custom OpenAI-compatible model discovery and keyless localhost checks",
+          "Codex CLI, Claude Code, Cline, cURL, Python and Node.js configuration generation",
+          "Free local preflight and credential-free diagnostic reports"
+        ]
+      }
+    </script>
+    <script type="application/ld+json" id="faq-schema">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What does API Doctor verify?",
+            "acceptedAnswer": { "@type": "Answer", "text": "It checks that a selected model and protocol return a valid, non-empty response structure for one non-streaming request. It does not benchmark model quality, prove streaming support or validate your production workload." }
+          },
+          {
+            "@type": "Question",
+            "name": "Are prompts, outputs or API keys stored?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. OAuth tokens and custom keys stay in page memory. Reports contain only allowlisted status, timing, public model ID and guidance fields—never prompts, outputs, credentials or endpoint URLs." }
+          },
+          {
+            "@type": "Question",
+            "name": "Is API Doctor free to use?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. The open-source tool, preflight and configuration generator are free. A live check may incur provider charges and runs only after explicit confirmation, with one request and a 32-token output cap." }
+          },
+          {
+            "@type": "Question",
+            "name": "Which protocols and clients are supported?",
+            "acceptedAnswer": { "@type": "Answer", "text": "HeFu OAuth supports OpenAI Chat Completions, OpenAI Responses and Anthropic Messages. Custom OpenAI-compatible endpoints support Chat Completions and Responses, including keyless localhost servers. Configuration examples cover Codex CLI, Claude Code, Cline, cURL, Python and Node.js." }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root">
       <main>
-        <h1>HeFu API Doctor</h1>
-        <p>Verify AI API compatibility, generate client configuration, and troubleshoot protocol errors without putting credentials, prompts or model output into diagnostic reports.</p>
+        <h1>Verify your AI API before you run into issues.</h1>
+        <p>HeFu API Doctor is a free open-source AI API compatibility checker and client configuration generator. Validate model IDs and protocol responses without putting credentials, prompts or model output into diagnostic reports.</p>
+        <p lang="zh-CN">合富宝 API Doctor 是免费开源的 AI API 兼容性诊断与客户端配置工具，支持免费预检、逐次确认真实请求和安全报告。</p>
         <h2>Controlled AI API compatibility checks</h2>
-        <p>Connect a HeFu account with OAuth and PKCE, review the models available to your application, and explicitly run one minimal request at a time for OpenAI Chat Completions, OpenAI Responses or Anthropic Messages. Custom OpenAI-compatible endpoints support explicit model discovery plus Chat Completions and Responses checks. Localhost servers may run without an API key.</p>
+        <p>Connect a HeFu account with OAuth and PKCE, review authorized models, and explicitly run one minimal request at a time for OpenAI Chat Completions, OpenAI Responses or Anthropic Messages. Custom OpenAI-compatible endpoints support model discovery plus Chat Completions and Responses checks. Localhost servers may run without an API key.</p>
         <h2>Client configuration generator</h2>
-        <p>Create copyable starting points for Codex CLI, Claude Code, Cline, cURL, Python and Node.js. Generated examples use your own API key and never insert OAuth tokens.</p>
-        <h2>Privacy and billing</h2>
-        <p>OAuth tokens stay in page memory. Reports contain only allowlisted status and timing fields. Software access is free; live model requests may be billed and always require explicit confirmation.</p>
-        <p><a href="/api-doctor/">Open API Doctor</a> · <a href="/docs">Read the API documentation</a> · <a href="/models">Browse available models</a></p>
+        <p>Create copyable starting points for Codex CLI, Claude Code, Cline, cURL, Python and Node.js. Examples use your own API key and never include OAuth tokens.</p>
+        <h2>Common questions</h2>
+        <details><summary>What does API Doctor verify?</summary><p>It checks that a selected model and protocol return a valid, non-empty response structure for one non-streaming request. It does not benchmark model quality, prove streaming support or validate your production workload.</p></details>
+        <details><summary>Are prompts, outputs or API keys stored?</summary><p>No. OAuth tokens and custom keys stay in page memory. Reports contain only allowlisted status, timing, public model ID and guidance fields—never prompts, outputs, credentials or endpoint URLs.</p></details>
+        <details><summary>Is API Doctor free to use?</summary><p>Yes. The open-source tool, preflight and configuration generator are free. A live check may incur provider charges and runs only after explicit confirmation, with one request and a 32-token output cap.</p></details>
+        <details><summary>Which protocols and clients are supported?</summary><p>HeFu OAuth supports OpenAI Chat Completions, OpenAI Responses and Anthropic Messages. Custom OpenAI-compatible endpoints support Chat Completions and Responses, including keyless localhost servers. Configuration examples cover Codex CLI, Claude Code, Cline, cURL, Python and Node.js.</p></details>
+        <p><a href="/api-doctor/">Open API Doctor</a> · <a href="/docs">Read the API documentation</a> · <a href="/models">Browse available models</a> · <a href="https://github.com/hefu-hk/hefu-api-doctor">Source code and documentation</a></p>
       </main>
     </div>
     <script type="module" src="/src/main.tsx"></script>

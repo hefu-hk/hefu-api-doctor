@@ -83,7 +83,17 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.lang = language;
-    document.title = language === "zh-CN" ? "合富宝 API Doctor — AI API 兼容性诊断" : "HeFu API Doctor — Verify your AI API before your users do";
+    document.title = t("metaTitle");
+    const metadata = {
+      'meta[name="description"]': t("metaDescription"),
+      'meta[property="og:title"]': t("metaTitle"),
+      'meta[property="og:description"]': t("metaDescription"),
+      'meta[name="twitter:title"]': t("metaTitle"),
+      'meta[name="twitter:description"]': t("metaDescription"),
+    };
+    for (const [selector, content] of Object.entries(metadata)) {
+      document.querySelector(selector)?.setAttribute("content", content);
+    }
   }, [language]);
 
   useEffect(() => {
@@ -481,9 +491,14 @@ export default function App() {
           </section>
         )}
 
-        <section className="privacy-section">
-          <h2>{t("privacyTitle")}</h2>
-          <div className="privacy-grid"><p>{t("privacyOne")}</p><p>{t("privacyTwo")}</p><p>{t("privacyThree")}</p></div>
+        <section className="privacy-section" aria-labelledby="faq-title">
+          <h2 id="faq-title">{t("faqTitle")}</h2>
+          <div className="faq-list">
+            <details><summary>{t("faqCheckQuestion")}</summary><p>{t("faqCheckAnswer")}</p></details>
+            <details><summary>{t("faqPrivacyQuestion")}</summary><p>{t("faqPrivacyAnswer")}</p></details>
+            <details><summary>{t("faqCostQuestion")}</summary><p>{t("faqCostAnswer")}</p></details>
+            <details><summary>{t("faqSupportQuestion")}</summary><p>{t("faqSupportAnswer")}</p></details>
+          </div>
         </section>
       </main>
 

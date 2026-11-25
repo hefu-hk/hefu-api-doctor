@@ -61,13 +61,13 @@ try {
   });
   const pause = (ms = 2000) => page.waitForTimeout(ms);
   await pause(4000);
-  await page.getByRole("tab", { name: "Configuration generator" }).click();
+  await page.getByRole("tab", { name: "Client configuration" }).click();
   await pause(3000);
   await page.getByLabel("Model ID").fill("demo-chat");
   await pause();
-  await page.getByLabel("Client").selectOption("curl");
+  await page.locator(".config-controls").getByLabel("Client").selectOption("curl");
   await pause();
-  await page.getByLabel("Client").selectOption("codex");
+  await page.locator(".config-controls").getByLabel("Client").selectOption("codex");
   await pause(3000);
   await page.getByRole("tab", { name: "API diagnostics" }).click();
   await pause();
@@ -79,7 +79,7 @@ try {
   await pause(1000);
   await page.getByRole("button", { name: "Load model IDs" }).click();
   await pause(3000);
-  await page.getByRole("button", { name: "Validate setup — free" }).click();
+  await page.getByRole("button", { name: "Run free preflight" }).click();
   await pause(4000);
   await page.getByRole("checkbox").check();
   await pause();

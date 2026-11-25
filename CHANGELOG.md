@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2 — 2026-11-25
+
+- Refocus the hero and bilingual interface copy on direct user outcomes, with a smaller 36/26 px display hierarchy.
+- Add concise product FAQs, bilingual dynamic metadata and clearer capability, billing and privacy explanations.
+- Add SoftwareApplication and FAQ structured data, a 1200×630 social sharing image and richer Open Graph/Twitter metadata.
+- Add an `llms.txt` index and a Markdown product overview for answer engines and coding agents.
+- Add browser checks for discovery metadata, structured-data/content consistency and bilingual summaries.
+
 ## 0.2.1 — 2026-11-25
 
 - Refine the visual hierarchy with smaller display and interface typography, tighter spacing and quieter surfaces.

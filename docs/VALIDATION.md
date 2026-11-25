@@ -60,3 +60,14 @@ All automated external API calls were mocked. No automated test incurred model c
 - Refreshed mocked demo: **60.68 seconds**, 960×540, approximately **4.52 MB**, with an explicit no-billable-request badge.
 - `npm audit` against the official npm registry: **0 vulnerabilities** at validation time.
 - This release changes presentation and layout tests only. Automated checks and the refreshed demo used mocks; **no additional real model request or cost was incurred**.
+
+## 2026-11-25 version 0.2.2 content and discovery refinement
+
+- Refocused the hero on the direct user outcome: “Verify your AI API before you run into issues.” / “在你遇到问题前，先验证 AI API。” Reduced display typography to **36 px desktop / 26 px mobile** and balanced mobile wrapping.
+- Refined bilingual interface copy and added four compact, answer-ready FAQs covering verification scope, privacy, billing and supported protocols/clients.
+- Added bilingual dynamic metadata, SoftwareApplication and FAQ structured data, complete Open Graph/Twitter fields and a reviewed **1200×630** social image.
+- Added `/api-doctor/llms.txt` and `/api-doctor/index.md` using the current llms.txt proposal’s `describedby` and Markdown alternate links. Content states capabilities and limitations without unsupported ranking or quality claims.
+- Unit tests: **39 passed**. Development-server Chromium E2E: **11 passed**. Production-build preview Chromium E2E: **11 passed**, including structured-data/visible-content consistency, bilingual metadata and static discovery resources.
+- English and Chinese visual checks at **320, 375, 768, 1024 and 1440 px** found no horizontal overflow or browser page errors. FAQ expansion was exercised.
+- Refreshed mocked demo: **60.68 seconds**, 960×540, approximately **4.31 MB**. `npm audit` against the official npm registry: **0 vulnerabilities**.
+- Automated checks and the demo used mocks. **No real model request or model cost was incurred** for this release.

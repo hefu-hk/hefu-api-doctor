@@ -19,17 +19,17 @@ async function selectCustom(page: import("@playwright/test").Page) {
 
 test("generates configuration without login and supports Chinese and mobile", async ({ page }) => {
   await page.goto("./");
-  await expect(page.getByRole("heading", { name: "Verify your AI API before your users do." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Verify your AI API before you run into issues." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Source", exact: true })).toHaveAttribute("href", "https://github.com/hefu-hk/hefu-api-doctor");
   await expect(page.getByRole("link", { name: "API docs" })).toHaveAttribute("href", /utm_source=api-doctor/);
-  await page.getByRole("tab", { name: "Configuration generator" }).click();
+  await page.getByRole("tab", { name: "Client configuration" }).click();
   await page.getByLabel("Model ID").fill("demo-chat");
   await expect(page.locator("pre")).toContainText('model = "demo-chat"');
   await expect(page.locator("pre")).toContainText('wire_api = "responses"');
   await expect(page.getByText("Current Codex CLI supports only the Responses API")).toBeVisible();
   await expect(page.locator("pre")).not.toContainText("access_token");
   await page.getByRole("button", { name: "中文" }).click();
-  await expect(page.getByRole("heading", { name: "在你的用户遇到问题前，先验证 AI API。" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "在你遇到问题前，先验证 AI API。" })).toBeVisible();
   await page.setViewportSize({ width: 375, height: 812 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
@@ -38,11 +38,11 @@ test("keeps the workspace compact on desktop and mobile", async ({ page }) => {
   await page.goto("./");
   const titleSize = () => page.locator("h1").evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
   const emptyHeight = () => page.locator(".empty-state").evaluate((element) => element.getBoundingClientRect().height);
-  expect(await titleSize()).toBeLessThanOrEqual(44);
+  expect(await titleSize()).toBeLessThanOrEqual(36);
   expect(await emptyHeight()).toBeLessThanOrEqual(300);
 
   await page.setViewportSize({ width: 375, height: 812 });
-  expect(await titleSize()).toBeLessThanOrEqual(30);
+  expect(await titleSize()).toBeLessThanOrEqual(26);
   expect(await emptyHeight()).toBeLessThanOrEqual(160);
   const connectionButtons = await page.locator(".segmented button").all();
   const firstBox = await connectionButtons[0].boundingBox();
@@ -51,6 +51,39 @@ test("keeps the workspace compact on desktop and mobile", async ({ page }) => {
   expect(secondBox).not.toBeNull();
   expect(Math.abs(firstBox!.y - secondBox!.y)).toBeLessThan(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("publishes answer-ready content and discovery metadata", async ({ page }) => {
+  await page.goto("./");
+  await expect(page).toHaveTitle("AI API Compatibility Checker | HeFu API Doctor");
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /Chat Completions, Responses and Anthropic Messages/);
+  await expect(page.locator('link[rel="describedby"]')).toHaveAttribute("href", "/api-doctor/llms.txt");
+  await expect(page.locator('link[rel="alternate"][type="text/markdown"]')).toHaveAttribute("href", "/api-doctor/index.md");
+  const software = JSON.parse(await page.locator("#software-schema").textContent());
+  const faq = JSON.parse(await page.locator("#faq-schema").textContent());
+  expect(software["@type"]).toBe("SoftwareApplication");
+  expect(software.isAccessibleForFree).toBe(true);
+  expect(faq.mainEntity).toHaveLength(4);
+
+  const firstQuestion = page.locator(".faq-list details").first();
+  await firstQuestion.locator("summary").click();
+  await expect(firstQuestion.locator("p")).toBeVisible();
+  expect(await firstQuestion.locator("summary").innerText()).toBe(faq.mainEntity[0].name);
+  expect(await firstQuestion.locator("p").innerText()).toBe(faq.mainEntity[0].acceptedAnswer.text);
+  await page.getByRole("button", { name: "中文", exact: true }).click();
+  await expect(page).toHaveTitle(/AI API 兼容性诊断与客户端配置/);
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /免费开源 AI API 兼容性诊断工具/);
+
+  for (const resource of ["llms.txt", "index.md", "og-image.png"]) {
+    const response = await page.request.get(new URL(resource, page.url()).toString());
+    expect(response.ok()).toBe(true);
+    if (resource.endsWith(".txt")) expect(await response.text()).toContain("# HeFu API Doctor");
+    if (resource.endsWith(".md")) expect(await response.text()).toContain("## 中文概述");
+    if (resource.endsWith(".png")) {
+      expect(response.headers()["content-type"]).toContain("image/png");
+      expect((await response.body()).byteLength).toBeGreaterThan(1000);
+    }
+  }
 });
 
 test("custom endpoint check sends one request and exports a credential-free report", async ({ page }) => {
@@ -104,7 +137,7 @@ test("discovers local models, preflights without generation and checks Responses
   expect(modelListCalls).toBe(1);
   await page.getByLabel("Model", { exact: true }).fill("local-responses");
   await page.getByRole("combobox", { name: "Protocol", exact: true }).selectOption("responses");
-  await page.getByRole("button", { name: "Validate setup — free" }).click();
+  await page.getByRole("button", { name: "Run free preflight" }).click();
   await expect(page.getByText("Setup checks passed. No network or model request was sent.")).toBeVisible();
   expect(generationCalls).toBe(0);
   await page.getByRole("checkbox").check();
@@ -112,7 +145,7 @@ test("discovers local models, preflights without generation and checks Responses
   await expect(page.locator(".result-status")).toHaveText("PASSED");
   expect(generationCalls).toBe(1);
   await page.getByRole("button", { name: "Generate client setup" }).click();
-  await page.getByLabel("Client").selectOption("codex");
+  await page.locator(".config-controls").getByLabel("Client").selectOption("codex");
   await expect(page.locator("pre")).toContainText('model_provider = "custom"');
   await expect(page.locator("pre")).toContainText('wire_api = "responses"');
   await expect(page.locator("pre")).toContainText('base_url = "http://localhost:11434/v1"');
