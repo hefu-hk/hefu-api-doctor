@@ -69,7 +69,7 @@ async function tokenRequest(body: Record<string, string>): Promise<OAuthSession>
 export async function beginOAuth(): Promise<void> {
   const { verifier, challenge, method } = await createPkcePair();
   const state = randomToken(32);
-  storage().setItem(TRANSACTION_KEY, JSON.stringify({ verifier, state }));
+  storage().setItem(TRANSACTION_KEY, JSON.stringify({ verifier, state, created_at: Date.now() }));
   const query = new URLSearchParams({
     client_id: doctorConfig.clientId,
     redirect_uri: doctorConfig.redirectUri,
@@ -94,9 +94,13 @@ export async function completeOAuth(search: string): Promise<OAuthSession | null
   const transaction = JSON.parse(storage().getItem(TRANSACTION_KEY) || "null") as {
     verifier?: string;
     state?: string;
+    created_at?: number;
   } | null;
   if (!transaction?.verifier || !transaction.state || transaction.state !== state) {
     throw new Error("OAuth state validation failed. Start authorization again.");
+  }
+  if (!transaction.created_at || transaction.created_at > Date.now() || Date.now() - transaction.created_at > 10 * 60_000) {
+    throw new Error("Authorization session expired. Start authorization again.");
   }
   storage().removeItem(TRANSACTION_KEY);
   const session = await tokenRequest({

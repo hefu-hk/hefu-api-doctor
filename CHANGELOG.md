@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 — 2026-11-25
+
+- Add custom-endpoint model discovery, Responses checks and keyless loopback support with an Ollama preset.
+- Add free local setup validation and protocol choices constrained by authorized model capabilities.
+- Carry verified model and protocol settings directly into compatible client configuration.
+- Validate non-empty protocol response structures and distinguish Responses output-budget exhaustion from incompatibility.
+- Exclude raw provider error text from results and reports; add a specific 60-second timeout result.
+- Add ten-minute OAuth callback expiry, model reload and empty states, mobile result scrolling and safer copy fallback.
+- Add attributed HeFu links, public source links and a mocked release demonstration.
+
 ## 0.1.1 — 2026-11-25
 
 - Add canonical and Open Graph metadata, crawler-readable fallback content and a standalone sitemap.

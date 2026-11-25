@@ -4,16 +4,38 @@ import type { DiagnosticInput, DiagnosticResult, Protocol } from "../types";
 const TEST_PROMPT = "Reply with OK only.";
 const MAX_TEST_TOKENS = 32;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object";
+}
+
+function loopbackHostname(hostname: string): boolean {
+  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  return normalized === "localhost" || normalized === "127.0.0.1" || normalized === "::1";
+}
+
 export function normalizeBaseUrl(value: string): string {
   const trimmed = value.trim().replace(/\/+$/, "");
-  const url = new URL(trimmed);
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    throw new Error("Enter a valid HTTP(S) base URL without credentials or query parameters.");
+  }
   if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
     throw new Error("Enter a valid HTTP(S) base URL without credentials or query parameters.");
   }
-  if (url.protocol === "http:" && !["127.0.0.1", "localhost", "::1"].includes(url.hostname)) {
+  if (url.protocol === "http:" && !loopbackHostname(url.hostname)) {
     throw new Error("HTTPS is required for public endpoints so credentials are not sent in plaintext.");
   }
   return trimmed;
+}
+
+export function isLoopbackBaseUrl(value: string): boolean {
+  try {
+    return loopbackHostname(new URL(normalizeBaseUrl(value)).hostname);
+  } catch {
+    return false;
+  }
 }
 
 function endpoint(input: DiagnosticInput): string {
@@ -43,42 +65,80 @@ function requestBody(input: DiagnosticInput): Record<string, unknown> {
 }
 
 export function validateDiagnosticInput(input: DiagnosticInput): string | null {
-  if (!input.model.trim()) return "Select or enter a model ID.";
-  if (input.connection === "hefu" && !input.accessToken) return "Connect with HeFu OAuth first.";
+  const zh = input.language === "zh-CN";
+  if (!input.model.trim()) return zh ? "请选择或输入模型 ID。" : "Select or enter a model ID.";
+  if (input.connection === "hefu" && !input.accessToken) return zh ? "请先通过合富宝 OAuth 连接。" : "Connect with HeFu OAuth first.";
   if (input.connection === "custom") {
-    if (!input.apiKey?.trim()) return "Enter the API key for this custom endpoint.";
-    if (input.protocol !== "chat") return "Custom endpoints currently support Chat Completions checks.";
     try {
       normalizeBaseUrl(input.baseUrl || "");
     } catch (error) {
+      if (zh) {
+        const httpsRequired = error instanceof Error && error.message.includes("HTTPS");
+        return httpsRequired ? "公网端点必须使用 HTTPS，避免凭据被明文传输。" : "请输入不含凭据和查询参数的有效 HTTP(S) Base URL。";
+      }
       return error instanceof Error ? error.message : "Enter a valid base URL.";
+    }
+    if (!isLoopbackBaseUrl(input.baseUrl || "") && !input.apiKey?.trim()) {
+      return zh ? "请输入此公网端点的 API Key。" : "Enter the API key for this public endpoint.";
+    }
+    if (!["chat", "responses"].includes(input.protocol)) {
+      return zh ? "自定义端点目前支持 Chat Completions 和 Responses 检查。" : "Custom endpoints currently support Chat Completions and Responses checks.";
     }
   }
   return null;
 }
 
-function validResponseShape(protocol: Protocol, payload: unknown): boolean {
-  if (!payload || typeof payload !== "object") return false;
-  const value = payload as Record<string, unknown>;
-  if (protocol === "chat") return Array.isArray(value.choices);
-  if (protocol === "responses") return value.object === "response" || Array.isArray(value.output);
-  return value.type === "message" && Array.isArray(value.content);
+function validChatShape(value: Record<string, unknown>): boolean {
+  if (!Array.isArray(value.choices) || value.choices.length === 0) return false;
+  return value.choices.some((choice) => {
+    if (!isRecord(choice) || !isRecord(choice.message) || typeof choice.message.role !== "string") return false;
+    const message = choice.message;
+    return (typeof message.content === "string" && message.content.length > 0)
+      || (Array.isArray(message.content) && message.content.length > 0 && message.content.every(isRecord))
+      || (message.content === null && (typeof message.refusal === "string" || Array.isArray(message.tool_calls)));
+  });
 }
 
-function rawErrorMessage(payload: unknown): string {
-  if (!payload || typeof payload !== "object") return "";
-  const root = payload as Record<string, unknown>;
-  const candidates = [root.error, root.detail, root];
-  for (const candidate of candidates) {
-    if (typeof candidate === "string") return candidate;
-    if (candidate && typeof candidate === "object") {
-      const value = candidate as Record<string, unknown>;
-      for (const key of ["message_en", "message", "error", "detail"]) {
-        if (typeof value[key] === "string") return value[key] as string;
-      }
-    }
+function validResponsesShape(value: Record<string, unknown>): boolean {
+  if (value.object !== "response" || !Array.isArray(value.output)) return false;
+  return value.output.some((item) => {
+    if (!isRecord(item) || item.type !== "message" || !Array.isArray(item.content)) return false;
+    return item.content.some((part) => isRecord(part) && part.type === "output_text" && typeof part.text === "string" && part.text.length > 0);
+  });
+}
+
+function validAnthropicShape(value: Record<string, unknown>): boolean {
+  if (value.type !== "message" || !Array.isArray(value.content) || value.content.length === 0) return false;
+  return value.content.some((part) => {
+    if (!isRecord(part)) return false;
+    return (part.type === "text" && typeof part.text === "string" && part.text.length > 0)
+      || (part.type === "tool_use" && typeof part.name === "string" && isRecord(part.input));
+  });
+}
+
+function validResponseShape(protocol: Protocol, payload: unknown): boolean {
+  if (!isRecord(payload)) return false;
+  if (protocol === "chat") return validChatShape(payload);
+  if (protocol === "responses") return validResponsesShape(payload);
+  return validAnthropicShape(payload);
+}
+
+function outputBudgetExhausted(protocol: Protocol, payload: unknown): boolean {
+  if (!isRecord(payload)) return false;
+  if (protocol === "chat" && Array.isArray(payload.choices)) {
+    return payload.choices.some((choice) => isRecord(choice) && choice.finish_reason === "length");
   }
-  return "";
+  if (protocol === "anthropic") return payload.stop_reason === "max_tokens";
+  return payload.status === "incomplete"
+    && isRecord(payload.incomplete_details)
+    && payload.incomplete_details.reason === "max_output_tokens";
+}
+
+function providerRateLimit(payload: unknown): boolean {
+  if (!isRecord(payload)) return false;
+  const error = payload.error;
+  if (!isRecord(error)) return false;
+  return [error.code, error.type].some((code) => typeof code === "string" && /^(rate_limit|rate_limit_error|insufficient_quota)$/i.test(code));
 }
 
 export function sanitizeDiagnosticText(value: string): string {
@@ -129,7 +189,7 @@ function guidance(
   if (status === 404) {
     return {
       message: zh ? "未找到模型或接口端点。" : "The model or endpoint was not found.",
-      recommendation: zh ? "检查 Base URL、协议路径，以及模型清单返回的准确公开模型 ID。" : "Check the base URL, protocol path and exact public model ID returned by the model list.",
+      recommendation: zh ? "检查 Base URL 是否包含所需的 /v1、协议路径，以及模型清单返回的准确公开模型 ID。" : "Check whether the base URL needs /v1, the protocol path and the exact public model ID returned by the model list.",
     };
   }
   if (status === 429 || errorCode === "rate_limit") {
@@ -144,10 +204,22 @@ function guidance(
       recommendation: zh ? "稍后使用相同请求重试。若持续失败，向技术支持提供脱敏报告、请求时间和模型 ID。" : "Retry later with the same request. If it persists, share the sanitized report, request time and model ID with support.",
     };
   }
+  if (errorCode === "output_budget") {
+    return {
+      message: zh ? "模型在生成可见消息前用完了本次 32-token 测试预算。" : "The model used the 32-token test budget before producing a visible message.",
+      recommendation: zh ? "这不等于协议不兼容。请在自己的集成中用更大的输出预算复测；本工具不会自动追加计费请求。" : "This does not prove protocol incompatibility. Retest in your own integration with a larger output budget; this tool will not send an automatic follow-up request.",
+    };
+  }
   if (errorCode === "invalid_response") {
     return {
       message: zh ? "端点返回了成功 HTTP 状态，但响应结构不符合协议。" : "The endpoint returned a successful HTTP status with an unexpected response shape.",
       recommendation: zh ? "对照所选协议契约检查响应，不要仅凭 HTTP 200 判定兼容。" : "Compare the response with the selected protocol contract. Do not treat a 200 response alone as proof of compatibility.",
+    };
+  }
+  if (errorCode === "timeout") {
+    return {
+      message: zh ? "请求在 60 秒内未完成。" : "The request did not complete within 60 seconds.",
+      recommendation: zh ? "检查服务和模型负载后再手动重试。浏览器超时不能证明服务端已停止计费或处理。" : "Check service and model load before manually retrying. A browser timeout does not prove that server-side processing or billing stopped.",
     };
   }
   if (errorCode === "network_error") {
@@ -170,17 +242,20 @@ export async function runDiagnostic(input: DiagnosticInput): Promise<DiagnosticR
   let responseShapeValid = false;
   let payload: unknown = null;
   let networkError: unknown = null;
+  let timedOut = false;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60_000);
   try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+    if (input.connection === "hefu") headers.Authorization = `Bearer ${input.accessToken}`;
+    else if (input.apiKey?.trim()) headers.Authorization = `Bearer ${input.apiKey.trim()}`;
+    if (input.protocol === "anthropic") headers["anthropic-version"] = "2023-06-01";
     const response = await fetch(endpoint(input), {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${input.connection === "hefu" ? input.accessToken : input.apiKey}`,
-        ...(input.protocol === "anthropic" ? { "anthropic-version": "2023-06-01" } : {}),
-      },
+      headers,
       body: JSON.stringify(requestBody(input)),
       credentials: "omit",
       cache: "no-store",
@@ -199,20 +274,26 @@ export async function runDiagnostic(input: DiagnosticInput): Promise<DiagnosticR
     responseShapeValid = response.ok && validResponseShape(input.protocol, payload);
   } catch (error) {
     networkError = error;
+    timedOut = controller.signal.aborted;
   } finally {
     clearTimeout(timeout);
   }
   const latency = Math.round(performance.now() - startedAt);
-  const errorCode = networkError
-    ? "network_error"
-    : status !== null && status >= 200 && status < 300 && !responseShapeValid
-      ? "invalid_response"
-      : status === 429
+  const successfulStatus = status !== null && status >= 200 && status < 300;
+  const budgetExhausted = successfulStatus && outputBudgetExhausted(input.protocol, payload);
+  const errorCode = timedOut
+    ? "timeout"
+    : networkError
+      ? "network_error"
+      : status === 429 || providerRateLimit(payload)
         ? "rate_limit"
-        : undefined;
-  const passed = status !== null && status >= 200 && status < 300 && responseShapeValid;
+        : budgetExhausted
+          ? "output_budget"
+          : successfulStatus && !responseShapeValid
+            ? "invalid_response"
+            : undefined;
+  const passed = successfulStatus && responseShapeValid && !budgetExhausted;
   const fallback = guidance(status, errorCode, input.language);
-  const safeDetail = sanitizeDiagnosticText(rawErrorMessage(payload));
   return {
     schema_version: "1.0",
     tool: "hefu-api-doctor",
@@ -230,7 +311,7 @@ export async function runDiagnostic(input: DiagnosticInput): Promise<DiagnosticR
       ? input.language === "zh-CN"
         ? "端点返回了符合该协议的有效响应。"
         : "The endpoint returned a valid response for this protocol."
-      : safeDetail || fallback.message,
+      : fallback.message,
     recommendation: passed
       ? input.language === "zh-CN"
         ? "本次检查已通过。生产使用前，请分别验证自己的提示词、流式响应和所需能力。"

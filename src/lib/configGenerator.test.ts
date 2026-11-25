@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateClientConfig } from "./configGenerator";
+import { effectiveClientProtocol, generateClientConfig } from "./configGenerator";
 
 describe("client configuration", () => {
   it("generates Codex Responses configuration without credentials", () => {
@@ -8,6 +8,21 @@ describe("client configuration", () => {
     expect(value).toContain('model = "model-a"');
     expect(value).toContain('env_key = "HEFU_API_KEY"');
     expect(value).not.toContain("access_token");
+  });
+
+  it("uses the required protocol for fixed clients", () => {
+    expect(effectiveClientProtocol("codex", "chat")).toBe("responses");
+    expect(effectiveClientProtocol("claude-code", "chat")).toBe("anthropic");
+    expect(effectiveClientProtocol("cline", "responses")).toBe("chat");
+    expect(effectiveClientProtocol("curl", "responses")).toBe("responses");
+  });
+
+  it("generates custom Codex Responses configuration with a neutral provider name", () => {
+    const value = generateClientConfig({ target: "codex", protocol: "chat", model: "local-model", connection: "custom", customBaseUrl: "http://localhost:11434/v1" });
+    expect(value).toContain('model_provider = "custom"');
+    expect(value).toContain("[model_providers.custom]");
+    expect(value).toContain('wire_api = "responses"');
+    expect(value).toContain('base_url = "http://localhost:11434/v1"');
   });
 
   it("uses the Anthropic root URL for Claude Code", () => {

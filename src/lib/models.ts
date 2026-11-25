@@ -1,7 +1,18 @@
-import type { ModelInfo } from "../types";
+import type { ModelInfo, Protocol } from "../types";
 
-export function chatModels(models: ModelInfo[]): ModelInfo[] {
-  return models.filter((model) => (model.api_modes || []).includes("chat"));
+const diagnosticProtocols: Protocol[] = ["chat", "responses", "anthropic"];
+
+export function modelProtocols(model: ModelInfo | undefined): Protocol[] {
+  if (!model) return [];
+  return diagnosticProtocols.filter((protocol) => (model.api_modes || []).includes(protocol));
+}
+
+export function supportsProtocol(model: ModelInfo | undefined, protocol: Protocol): boolean {
+  return modelProtocols(model).includes(protocol);
+}
+
+export function diagnosticModels(models: ModelInfo[]): ModelInfo[] {
+  return models.filter((model) => modelProtocols(model).length > 0);
 }
 
 export function modelLabel(model: ModelInfo): string {

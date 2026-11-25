@@ -11,6 +11,13 @@ export interface ConfigInput {
   customBaseUrl?: string;
 }
 
+export function effectiveClientProtocol(target: ClientTarget, requested: Protocol): Protocol {
+  if (target === "codex") return "responses";
+  if (target === "claude-code") return "anthropic";
+  if (target === "cline") return "chat";
+  return requested;
+}
+
 function baseUrl(input: ConfigInput): string {
   return input.connection === "custom"
     ? (input.customBaseUrl || "https://provider.example/v1").replace(/\/+$/, "")
@@ -28,7 +35,9 @@ export function generateClientConfig(input: ConfigInput): string {
   const key = input.connection === "hefu" ? "HEFU_API_KEY" : "AI_API_KEY";
   const bearer = `$${key}`;
   if (input.target === "codex") {
-    return `model = "${model}"\nmodel_provider = "hefu"\n\n[model_providers.hefu]\nname = "HeFu AI"\nbase_url = "${base}"\nwire_api = "responses"\nenv_key = "${key}"`;
+    const provider = input.connection === "hefu" ? "hefu" : "custom";
+    const providerName = input.connection === "hefu" ? "HeFu AI" : "Custom OpenAI-compatible";
+    return `model = "${model}"\nmodel_provider = "${provider}"\n\n[model_providers.${provider}]\nname = "${providerName}"\nbase_url = "${base}"\nwire_api = "responses"\nenv_key = "${key}"`;
   }
   if (input.target === "claude-code") {
     return `export ANTHROPIC_BASE_URL="${root}"\nexport ANTHROPIC_AUTH_TOKEN="$${key}"\nexport ANTHROPIC_MODEL="${model}"`;

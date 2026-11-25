@@ -29,3 +29,17 @@ All automated external API calls were mocked. No automated test incurred model c
 - The test grant was revoked successfully; the former ext token then received 401 from `ext/models`.
 - No OAuth token was found in localStorage or sessionStorage. The 375 px production viewport had no horizontal overflow.
 - Main backend stayed healthy and was not restarted. Nginx was recreated alone with `--no-deps` after confirming zero in-flight model requests.
+
+## 2026-11-25 version 0.2.0 release candidate
+
+- Product and release audit completed with external research into API integration failures, local OpenAI-compatible servers, current Codex protocol requirements and competing compatibility checkers.
+- Added custom model discovery, custom Responses checks, keyless loopback support, free setup validation, capability-constrained protocol selection and verified-result configuration handoff.
+- Strengthened response contracts, raw-error privacy, output-budget guidance, timeout classification and OAuth transaction expiry.
+- Clean dependency installation: **88 packages added** from the lockfile.
+- Unit tests: **39 passed** across six test files. TypeScript and Vite production build: passed.
+- Development-server Chromium E2E: **9 passed**. Production-build preview Chromium E2E: **9 passed**.
+- Browser coverage includes configuration generation, English and Chinese UI, custom model discovery, keyless local Responses checks, no-generation preflight, one-request billing confirmation, safe reports, OAuth state and transaction expiry, PKCE, model capability restrictions, success handoff and actionable failures.
+- Visual production-build checks at **320, 375, 768, 1024 and 1440 px** found no horizontal overflow. Mobile results scroll into view and no browser page errors were observed.
+- Mocked demo: **60.8 seconds**, 960×540, approximately **4.1 MB**, with an explicit no-billable-request badge.
+- `npm audit` against the official npm registry: **0 vulnerabilities** at validation time.
+- All external requests in automated tests and the demo were mocked. **No real model request was made and no model cost was incurred** for this release-candidate audit. Real OAuth and three-protocol production acceptance remains a separate release gate.
