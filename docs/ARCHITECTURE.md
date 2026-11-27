@@ -3,6 +3,7 @@
 ## Components
 
 - Standalone React + TypeScript static SPA, built by Vite at `/api-doctor/`.
+- Crawlable static Codex and n8n guides in English and Simplified Chinese, with canonical and hreflang metadata.
 - Main HeFu OAuth authorization server and public ext API, unchanged.
 - Independent versioned static release directory in the existing frontend volume.
 - No API Doctor server, database, analytics, service worker or persistent credential store.
@@ -16,6 +17,12 @@
 5. The token request contains the verifier and no client secret.
 6. Access and refresh tokens remain in JavaScript page memory. Leaving or reloading requires authorization again.
 7. The authorization code and transaction are removed from the URL and session storage. Callback transactions expire after ten minutes.
+
+## No-request troubleshooting and guides
+
+- Client and symptom choices come from allowlisted values and select a local bilingual checklist. They never initiate network requests or claim that an endpoint was tested.
+- Only non-sensitive `client` and `symptom` query parameters preselect the troubleshooting view. Endpoint URLs, credentials, prompts and outputs are never accepted in guide links.
+- Static guides contain configuration examples and safety boundaries but no executable scripts, trackers or credential collection.
 
 ## Model discovery and setup validation
 

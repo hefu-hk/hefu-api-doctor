@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f7f7" />
+  <meta name="description" content="Fix n8n OpenAI-compatible model node 404 errors when HTTP Request works. Compare Base URL, model ID, Responses settings, tools and retry behavior." />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
+  <link rel="canonical" href="https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/" />
+  <link rel="alternate" hreflang="en" href="https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/" />
+  <link rel="alternate" hreflang="zh-CN" href="https://hefu.hk/api-doctor/zh-cn/guides/n8n-openai-compatible-404/" />
+  <link rel="alternate" hreflang="x-default" href="https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="HeFu API Doctor" />
+  <meta property="og:title" content="n8n OpenAI-compatible model node 404 checklist" />
+  <meta property="og:description" content="HTTP Request works but the n8n model node fails? Compare the effective Base URL, model ID, API surface and retries." />
+  <meta property="og:url" content="https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/" />
+  <meta property="og:image" content="https://hefu.hk/api-doctor/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="/api-doctor/favicon.svg" />
+  <link rel="stylesheet" href="/api-doctor/guides/guide.css" />
+  <title>n8n OpenAI-Compatible Model Node 404 Checklist | HeFu API Doctor</title>
+  <script type="application/ld+json">
+    {"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"n8n HTTP Request works, but the OpenAI-compatible model node returns 404","description":"Compare Base URL, model ID, Responses settings and retries to fix n8n OpenAI-compatible model node failures.","datePublished":"2026-11-27","dateModified":"2026-11-27","inLanguage":"en","mainEntityOfPage":"https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/","author":{"@type":"Organization","name":"HeFu","url":"https://hefu.hk/"},"publisher":{"@type":"Organization","name":"HeFu","url":"https://hefu.hk/"},"isAccessibleForFree":true},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Why can the HTTP Request node work while the OpenAI Chat Model node returns 404?","acceptedAnswer":{"@type":"Answer","text":"The HTTP Request node uses a full URL, while the model node constructs a request from its credential, Base URL, model and API options. A node override or Responses setting can produce a different effective route."}},{"@type":"Question","name":"Should I enable Use Responses API for every OpenAI-compatible provider?","acceptedAnswer":{"@type":"Answer","text":"No. Enable it only when the selected provider and model support /responses. Otherwise start with Chat Completions in a simple text chain."}},{"@type":"Question","name":"Why should retries be reviewed during diagnosis?","acceptedAnswer":{"@type":"Answer","text":"The model node, workflow settings and a gateway can each retry. One logical operation may become several billable attempts and obscure the original failure."}}]}]}
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/api-doctor/"><img src="/api-doctor/favicon.svg" alt="" width="30" height="30" /><span>HeFu API Doctor</span></a>
+    <nav class="header-nav" aria-label="Page navigation"><a href="/api-doctor/">Open the tool</a><a class="language-link" href="/api-doctor/zh-cn/guides/n8n-openai-compatible-404/" hreflang="zh-CN" lang="zh-CN">中文</a></nav>
+  </header>
+  <main>
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/api-doctor/">API Doctor</a><span>→</span><span>n8n model node 404</span></nav>
+    <article>
+      <header class="article-header">
+        <span class="kicker">n8n · OpenAI-compatible · Model node 404</span>
+        <h1>HTTP Request works, but the n8n model node returns 404</h1>
+        <p class="lede">Reduce the workflow to one comparable request, then check the effective Base URL, exact model ID and Chat/Responses setting before debugging an AI Agent.</p>
+        <div class="article-meta">Updated 2026-11-27 · 8 minute read · No workflow credentials required for the checklist</div>
+      </header>
+
+      <div class="quick-answer"><strong>Quick answer</strong><p>The HTTP Request node uses a <strong>full URL</strong>. The OpenAI Chat Model node builds its request from a credential, Base URL, model and API options. A node-level override or unsupported Responses setting can send an otherwise valid key to a different route.</p></div>
+
+      <section>
+        <h2>1. Make the two requests comparable</h2>
+        <p>Before changing the model or credentials, compare these fields side by side:</p>
+        <table class="error-table">
+          <thead><tr><th>Field</th><th>HTTP Request node</th><th>OpenAI Chat Model node</th></tr></thead>
+          <tbody>
+            <tr><td>URL</td><td>Full documented chat route</td><td>Base URL from credential or node override</td></tr>
+            <tr><td>Model</td><td>Exact ID in the JSON body</td><td>Exact ID selected or entered in the node</td></tr>
+            <tr><td>Credential</td><td>Generic Header Auth or equivalent</td><td>Selected OpenAI credential</td></tr>
+            <tr><td>Operation</td><td>One controlled, non-streaming text request</td><td>Chat or Responses, plus any node and Agent options</td></tr>
+          </tbody>
+        </table>
+        <p>Use one synthetic message such as <code>Reply with OK only.</code> Do not copy production prompts or customer data into a test workflow.</p>
+      </section>
+
+      <section>
+        <h2>2. Check the credential and node-level Base URL</h2>
+        <p>For many OpenAI-compatible providers, the OpenAI credential uses this shape:</p>
+        <pre><code>OpenAI credential
+  API Key: &lt;AI_API_KEY&gt;
+  Base URL: https://provider.example/v1
+  Organization ID: leave empty unless required
+
+OpenAI Chat Model
+  Model: By ID → exact-public-model-id
+  Options → Base URL: leave empty to inherit the credential
+  Use Responses API: Off for initial Chat Completions testing</code></pre>
+        <ol>
+          <li><strong>Include the provider's required base segment.</strong> This is commonly <code>/v1</code>, not the full <code>/chat/completions</code> route.</li>
+          <li><strong>Check <code>Options → Base URL</code>.</strong> A node-level value can override the credential and point the same key at a different provider or path.</li>
+          <li><strong>Enter the model ID directly when needed.</strong> If <code>GET /models</code> is unsupported or the list is incomplete, a list-selection failure does not necessarily mean the model itself is unavailable.</li>
+        </ol>
+        <div class="note">n8n labels and available options vary by version. Check the fields in your installed node rather than assuming an older screenshot is identical.</div>
+      </section>
+
+      <section>
+        <h2>3. Disable Responses unless it is explicitly supported</h2>
+        <p>Newer n8n nodes may offer <strong>Use Responses API</strong>. That option changes the API surface; it is not a cosmetic preference.</p>
+        <ul>
+          <li>If the provider supports only <code>/chat/completions</code>, leave Responses off.</li>
+          <li>If you enable it, verify <code>/responses</code> separately with the same Base URL and exact model.</li>
+          <li>Do not assume that support for OpenAI-style authentication or model listing implies support for both generation APIs.</li>
+        </ul>
+        <p>A live comparison may incur provider charges. Review pricing and send only one minimal request at a time:</p>
+        <pre><code>curl "https://provider.example/v1/chat/completions" \
+  -H "Authorization: Bearer $AI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"exact-public-model-id","messages":[{"role":"user","content":"Reply with OK only."}],"max_tokens":32,"stream":false}'</code></pre>
+      </section>
+
+      <section>
+        <h2>4. Test a simple text chain before an AI Agent</h2>
+        <p>Once the minimal HTTP request works, test the same credential and model in a simple text chain with the model node. Temporarily disable streaming, tools and structured output.</p>
+        <ol>
+          <li>If the simple chain fails, compare its effective route and protocol with the HTTP Request node.</li>
+          <li>If the simple chain passes but an AI Agent fails, reintroduce tools, JSON output and streaming one at a time.</li>
+          <li>Check both protocol support and model behavior. An endpoint may accept a tools field but return a different tool-call structure, or a model may simply not select the tool.</li>
+        </ol>
+        <div class="warning"><strong>A plain text pass does not prove tool calling, streaming or structured output.</strong> Those capabilities require separate checks in the target n8n workflow.</div>
+      </section>
+
+      <section>
+        <h2>5. Prevent retries from multiplying the failure</h2>
+        <p>The model node's <code>Max Retries</code>, the node's <code>Retry On Fail</code> setting and a provider or gateway can each retry. One logical operation may therefore become several attempts.</p>
+        <ul>
+          <li>Temporarily disable extra retries while isolating the first failure.</li>
+          <li>For 429, inspect RPM, TPM, concurrency, quota and <code>Retry-After</code> separately.</li>
+          <li>Restore only intentional retry behavior after the root cause is fixed. Every attempt may be billable.</li>
+        </ul>
+        <div class="warning"><strong>Share safely:</strong> remove API keys, credential IDs, customer data, prompts, model outputs and internal hostnames from exported workflows and screenshots. Keep only the n8n version, node type, public model ID, HTTP status and redacted route shape.</div>
+      </section>
+
+      <aside class="cta">
+        <div><h2>Generate the fields without sharing a key</h2><p>Use the no-request n8n checklist and copy a configuration template. API Doctor never inserts OAuth tokens or custom keys into generated setup.</p></div>
+        <div class="cta-actions"><a class="button primary" href="/api-doctor/?client=n8n&amp;symptom=not-found">Open n8n checklist</a><a class="button secondary" href="/api-doctor/">Open API Doctor</a></div>
+      </aside>
+
+      <section class="faq">
+        <h2>Common questions</h2>
+        <details><summary>Why can the HTTP Request node work while the OpenAI Chat Model node returns 404?</summary><p>The HTTP Request node uses a full URL, while the model node constructs a request from its credential, Base URL, model and API options. A node override or Responses setting can produce a different effective route.</p></details>
+        <details><summary>Should I enable Use Responses API for every OpenAI-compatible provider?</summary><p>No. Enable it only when the selected provider and model support <code>/responses</code>. Otherwise start with Chat Completions in a simple text chain.</p></details>
+        <details><summary>Why should retries be reviewed during diagnosis?</summary><p>The model node, workflow settings and a gateway can each retry. One logical operation may become several billable attempts and obscure the original failure.</p></details>
+      </section>
+
+      <section class="sources">
+        <h2>Sources and further reading</h2>
+        <ul>
+          <li><a href="https://community.n8n.io/t/troubleshooting-checklist-http-request-works-but-my-openai-compatible-model-node-returns-404/328932" target="_blank" rel="noreferrer">n8n community: HTTP Request works, but the model node returns 404</a></li>
+          <li><a href="https://community.n8n.io/t/pointing-n8ns-openai-credential-at-any-openai-compatible-endpoint-base-url-model-list-retries/322595" target="_blank" rel="noreferrer">n8n community: custom Base URL, model list and retries</a></li>
+          <li><a href="https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-langchain.openai/" target="_blank" rel="noreferrer">n8n documentation: OpenAI node</a></li>
+          <li><a href="https://hefu.hk/docs">HeFu public API documentation</a></li>
+        </ul>
+      </section>
+    </article>
+  </main>
+  <footer><span>© 2026 HeFu API Doctor · Open-source, privacy-first diagnostics</span><span><a href="https://github.com/hefu-hk/hefu-api-doctor">GitHub</a> · <a href="/api-doctor/">Client configuration generator</a></span></footer>
+</body>
+</html>

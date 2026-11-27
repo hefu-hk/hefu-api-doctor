@@ -1,9 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://hefu.hk/api-doctor/</loc>
-    <lastmod>2026-11-25</lastmod>
+    <lastmod>2026-11-27</lastmod>
     <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hefu.hk/api-doctor/guides/codex-responses-404/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hefu.hk/api-doctor/guides/codex-responses-404/" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://hefu.hk/api-doctor/zh-cn/guides/codex-responses-404/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hefu.hk/api-doctor/guides/codex-responses-404/" />
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://hefu.hk/api-doctor/zh-cn/guides/codex-responses-404/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hefu.hk/api-doctor/guides/codex-responses-404/" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://hefu.hk/api-doctor/zh-cn/guides/codex-responses-404/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hefu.hk/api-doctor/guides/codex-responses-404/" />
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://hefu.hk/api-doctor/zh-cn/guides/n8n-openai-compatible-404/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/" />
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://hefu.hk/api-doctor/zh-cn/guides/n8n-openai-compatible-404/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://hefu.hk/api-doctor/zh-cn/guides/n8n-openai-compatible-404/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/" />
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 </urlset>

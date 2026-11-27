@@ -11,7 +11,7 @@ export const doctorConfig: DoctorConfig = {
   hefuBaseUrl: baseUrl,
   clientId: (import.meta.env.VITE_OAUTH_CLIENT_ID as string | undefined)?.trim() || "",
   redirectUri,
-  toolVersion: "0.2.2",
+  toolVersion: "0.3.0",
 };
 
 export const oauthConfigured = /^oc_[a-f0-9]{24}$/.test(doctorConfig.clientId);

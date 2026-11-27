@@ -10,10 +10,13 @@ import { hefuLink, sourceLinks } from "./lib/links";
 import { diagnosticModels, estimateTestCost, modelLabel, modelProtocols, supportsProtocol } from "./lib/models";
 import { beginOAuth, clearOAuthSession, completeOAuth, fetchAuthorized, validOAuthSession } from "./lib/oauth";
 import { createSafeReport, reportFilename } from "./lib/report";
+import { isTroubleshootingClient, isTroubleshootingSymptom, troubleshootingAdvice } from "./lib/troubleshooting";
+import type { TroubleshootingClient, TroubleshootingSymptom } from "./lib/troubleshooting";
 import type { ConnectionKind, DiagnosticInput, DiagnosticResult, Language, ModelInfo, OAuthSession, Protocol } from "./types";
 
 const clients: { id: ClientTarget; label: string }[] = [
   { id: "codex", label: "Codex CLI" },
+  { id: "n8n", label: "n8n" },
   { id: "claude-code", label: "Claude Code" },
   { id: "cline", label: "Cline" },
   { id: "curl", label: "cURL" },
@@ -23,11 +26,18 @@ const clients: { id: ClientTarget; label: string }[] = [
 
 type NoticeTone = "info" | "success" | "error";
 type CopyTarget = "config" | "report" | null;
+type WorkspaceTab = "diagnose" | "configure" | "troubleshoot";
+
+const pageParams = new URLSearchParams(window.location.search);
+const initialTroubleClient: TroubleshootingClient = isTroubleshootingClient(pageParams.get("client")) ? pageParams.get("client") as TroubleshootingClient : "codex";
+const initialTroubleSymptom: TroubleshootingSymptom = isTroubleshootingSymptom(pageParams.get("symptom")) ? pageParams.get("symptom") as TroubleshootingSymptom : "not-found";
 
 export default function App() {
   const [language, setLanguage] = useState<Language>(initialLanguage);
   const t = (key: TranslationKey) => translate(language, key);
-  const [tab, setTab] = useState<"diagnose" | "configure">("diagnose");
+  const [tab, setTab] = useState<WorkspaceTab>(isTroubleshootingClient(pageParams.get("client")) ? "troubleshoot" : "diagnose");
+  const [troubleClient, setTroubleClient] = useState<TroubleshootingClient>(initialTroubleClient);
+  const [troubleSymptom, setTroubleSymptom] = useState<TroubleshootingSymptom>(initialTroubleSymptom);
   const [connection, setConnection] = useState<ConnectionKind>("hefu");
   const [session, setSession] = useState<OAuthSession | null>(null);
   const [models, setModels] = useState<ModelInfo[]>([]);
@@ -71,6 +81,7 @@ export default function App() {
     () => generateClientConfig({ target: client, protocol: effectiveConfigProtocol, model: configModel, connection: configConnection, customBaseUrl: configBaseUrl }),
     [client, effectiveConfigProtocol, configModel, configConnection, configBaseUrl],
   );
+  const advice = useMemo(() => troubleshootingAdvice(troubleClient, troubleSymptom, language), [troubleClient, troubleSymptom, language]);
 
   const protocolText = (value: Protocol) => t(value === "chat" ? "chatProtocol" : value === "responses" ? "responsesProtocol" : "anthropicProtocol");
 
@@ -328,6 +339,13 @@ export default function App() {
     setTab("configure");
   };
 
+  const configureFromAdvice = () => {
+    setClient(advice.configTarget);
+    setConfigProtocol(advice.configProtocol);
+    setNotice("");
+    setTab("configure");
+  };
+
   return (
     <div className="app-shell">
       <header className="site-header">
@@ -358,6 +376,7 @@ export default function App() {
 
         <div className="workspace-tabs" role="tablist" aria-label="Tools">
           <button id="diagnose-tab" role="tab" aria-selected={tab === "diagnose"} aria-controls="diagnose-panel" className={tab === "diagnose" ? "active" : ""} onClick={() => { setTab("diagnose"); setNotice(""); }}>{t("diagnoseTab")}</button>
+          <button id="troubleshoot-tab" role="tab" aria-selected={tab === "troubleshoot"} aria-controls="troubleshoot-panel" className={tab === "troubleshoot" ? "active" : ""} onClick={() => { setTab("troubleshoot"); setNotice(""); }}>{t("troubleshootTab")}</button>
           <button id="configure-tab" role="tab" aria-selected={tab === "configure"} aria-controls="configure-panel" className={tab === "configure" ? "active" : ""} onClick={() => { setTab("configure"); setNotice(""); }}>{t("configureTab")}</button>
         </div>
 
@@ -467,6 +486,24 @@ export default function App() {
               )}
             </section>
           </div>
+        ) : tab === "troubleshoot" ? (
+          <section className="panel troubleshoot-panel" id="troubleshoot-panel" role="tabpanel" aria-labelledby="troubleshoot-tab">
+            <div className="config-intro"><h2>{t("troubleshootTitle")}</h2><p className="muted">{t("troubleshootDescription")}</p></div>
+            <div className="troubleshoot-controls">
+              <label>{t("troubleClient")}<select value={troubleClient} onChange={(event) => setTroubleClient(event.target.value as TroubleshootingClient)}><option value="codex">Codex CLI</option><option value="n8n">n8n</option></select></label>
+              <label>{t("troubleSymptom")}<select value={troubleSymptom} onChange={(event) => setTroubleSymptom(event.target.value as TroubleshootingSymptom)}><option value="not-found">{t("symptomNotFound")}</option><option value="auth">{t("symptomAuth")}</option><option value="rate-limit">{t("symptomRateLimit")}</option><option value="client-only">{t("symptomClientOnly")}</option></select></label>
+            </div>
+            <article className="advice-card" aria-live="polite">
+              <span className="eyebrow">{t("troubleNoRequest")}</span>
+              <h3>{advice.title}</h3>
+              <p>{advice.summary}</p>
+              <ol>{advice.steps.map((step) => <li key={step}>{step}</li>)}</ol>
+              <div className="button-row">
+                <a className="button primary" href={`${import.meta.env.BASE_URL}${advice.guidePath}`}>{t("openGuide")}</a>
+                <button className="button secondary" onClick={configureFromAdvice}>{t("openClientConfig")}</button>
+              </div>
+            </article>
+          </section>
         ) : (
           <section className="panel config-panel" id="configure-panel" role="tabpanel" aria-labelledby="configure-tab">
             <div className="config-intro"><h2>{t("configTitle")}</h2><p className="muted">{t("configDescription")}</p></div>
@@ -476,7 +513,7 @@ export default function App() {
                 <label>{t("configModel")}<input value={configModel} onChange={(event) => setConfigModel(event.target.value)} placeholder="your-model-id" /></label>
                 <label>{t("configConnection")}<select value={configConnection} onChange={(event) => setConfigConnection(event.target.value as ConnectionKind)}><option value="hefu">{t("useHefu")}</option><option value="custom">{t("useCustom")}</option></select></label>
                 {configConnection === "custom" && <label>{t("configCustomBase")}<input value={configBaseUrl} onChange={(event) => setConfigBaseUrl(event.target.value)} placeholder="https://provider.example/v1" /></label>}
-                {client !== "codex" && client !== "claude-code" && client !== "cline" && <label>{t("protocol")}<select value={configProtocol} onChange={(event) => setConfigProtocol(event.target.value as Protocol)}><option value="chat">{t("chatProtocol")}</option><option value="responses">{t("responsesProtocol")}</option><option value="anthropic">{t("anthropicProtocol")}</option></select></label>}
+                {client !== "codex" && client !== "claude-code" && client !== "cline" && <label>{t("protocol")}<select value={client === "n8n" ? effectiveConfigProtocol : configProtocol} onChange={(event) => setConfigProtocol(event.target.value as Protocol)}><option value="chat">{t("chatProtocol")}</option><option value="responses">{t("responsesProtocol")}</option>{client !== "n8n" && <option value="anthropic">{t("anthropicProtocol")}</option>}</select></label>}
                 {(client === "codex" || client === "claude-code" || client === "cline") && <div className="fixed-protocol"><span>{t("requiredProtocol")}</span><strong>{protocolText(effectiveConfigProtocol)}</strong></div>}
               </div>
               <div className="code-panel">
@@ -485,11 +522,20 @@ export default function App() {
               </div>
             </div>
             {client === "codex" && <p className="muted small">{t("codexProtocolNote")}</p>}
+            {client === "n8n" && <p className="muted small">{t("n8nProtocolNote")}</p>}
             {!configCompatible && <p className="notice error">{t("configCompatibility")}</p>}
             <p className="notice">{t("configNote")}</p>
             {notice && <div className={`notice ${noticeTone}`} role={noticeTone === "error" ? "alert" : "status"}>{notice}</div>}
           </section>
         )}
+
+        <section className="guides-section" aria-labelledby="guides-title">
+          <div className="section-heading"><h2 id="guides-title">{t("guidesTitle")}</h2><p className="muted">{t("guidesDescription")}</p></div>
+          <div className="guides-grid">
+            <a className="guide-card" href={`${import.meta.env.BASE_URL}${language === "zh-CN" ? "zh-cn/" : ""}guides/codex-responses-404/`}><span>Codex CLI · Responses API</span><h3>{t("codexGuideTitle")}</h3><p>{t("codexGuideDescription")}</p><strong>{t("readGuide")} →</strong></a>
+            <a className="guide-card" href={`${import.meta.env.BASE_URL}${language === "zh-CN" ? "zh-cn/" : ""}guides/n8n-openai-compatible-404/`}><span>n8n · OpenAI-compatible</span><h3>{t("n8nGuideTitle")}</h3><p>{t("n8nGuideDescription")}</p><strong>{t("readGuide")} →</strong></a>
+          </div>
+        </section>
 
         <section className="privacy-section" aria-labelledby="faq-title">
           <h2 id="faq-title">{t("faqTitle")}</h2>

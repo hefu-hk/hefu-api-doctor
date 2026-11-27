@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f7f7" />
+  <meta name="description" content="解决 n8n 中 HTTP Request 成功、OpenAI 兼容模型节点却返回 404 的问题：对比 Base URL、模型 ID、Responses 设置、工具与重试。" />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
+  <link rel="canonical" href="https://hefu.hk/api-doctor/zh-cn/guides/n8n-openai-compatible-404/" />
+  <link rel="alternate" hreflang="en" href="https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/" />
+  <link rel="alternate" hreflang="zh-CN" href="https://hefu.hk/api-doctor/zh-cn/guides/n8n-openai-compatible-404/" />
+  <link rel="alternate" hreflang="x-default" href="https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="合富宝 API Doctor" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:title" content="n8n OpenAI 兼容模型节点 404 检查清单" />
+  <meta property="og:description" content="HTTP Request 成功但 n8n 模型节点失败？对比实际 Base URL、模型 ID、API 协议与重试设置。" />
+  <meta property="og:url" content="https://hefu.hk/api-doctor/zh-cn/guides/n8n-openai-compatible-404/" />
+  <meta property="og:image" content="https://hefu.hk/api-doctor/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="/api-doctor/favicon.svg" />
+  <link rel="stylesheet" href="/api-doctor/guides/guide.css" />
+  <title>n8n OpenAI 兼容模型节点 404 检查清单 | 合富宝 API Doctor</title>
+  <script type="application/ld+json">
+    {"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"n8n 的 HTTP Request 成功，但 OpenAI 兼容模型节点返回 404","description":"通过对比 Base URL、模型 ID、Responses 设置和重试行为，排查 n8n OpenAI 兼容模型节点故障。","datePublished":"2026-11-27","dateModified":"2026-11-27","inLanguage":"zh-CN","mainEntityOfPage":"https://hefu.hk/api-doctor/zh-cn/guides/n8n-openai-compatible-404/","author":{"@type":"Organization","name":"HeFu","url":"https://hefu.hk/"},"publisher":{"@type":"Organization","name":"HeFu","url":"https://hefu.hk/"},"isAccessibleForFree":true},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"为什么 HTTP Request 节点成功，OpenAI Chat Model 节点却返回 404？","acceptedAnswer":{"@type":"Answer","text":"HTTP Request 节点使用完整 URL，模型节点则根据凭据、Base URL、模型和 API 选项构造请求。节点覆盖项或 Responses 设置可能生成不同的实际路由。"}},{"@type":"Question","name":"所有 OpenAI 兼容服务商都应该启用 Use Responses API 吗？","acceptedAnswer":{"@type":"Answer","text":"不应该。只有所选服务商和模型支持 /responses 时才启用，否则应先在简单文本链中使用 Chat Completions。"}},{"@type":"Question","name":"排障时为什么要检查重试设置？","acceptedAnswer":{"@type":"Answer","text":"模型节点、工作流设置和网关都可能重试。一次逻辑操作可能变成多个计费请求，也会掩盖最初的故障。"}}]}]}
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/api-doctor/"><img src="/api-doctor/favicon.svg" alt="" width="30" height="30" /><span>合富宝 API Doctor</span></a>
+    <nav class="header-nav" aria-label="页面导航"><a href="/api-doctor/">打开工具</a><a class="language-link" href="/api-doctor/guides/n8n-openai-compatible-404/" hreflang="en" lang="en">English</a></nav>
+  </header>
+  <main>
+    <nav class="breadcrumb" aria-label="面包屑"><a href="/api-doctor/">API Doctor</a><span>→</span><span>n8n 模型节点 404</span></nav>
+    <article>
+      <header class="article-header">
+        <span class="kicker">n8n · OpenAI 兼容 · 模型节点 404</span>
+        <h1>HTTP Request 成功，但 n8n 模型节点返回 404</h1>
+        <p class="lede">先把工作流缩减为一个可对照的请求，再检查实际 Base URL、准确模型 ID 和 Chat/Responses 设置，不要直接排查复杂的 AI Agent。</p>
+        <div class="article-meta">更新于 2026-11-27 · 约 8 分钟 · 检查清单不需要工作流凭据</div>
+      </header>
+
+      <div class="quick-answer"><strong>快速结论</strong><p>HTTP Request 节点使用<strong>完整 URL</strong>，OpenAI Chat Model 节点则根据凭据、Base URL、模型和 API 选项构造请求。节点级覆盖项或不受支持的 Responses 设置，可能把有效 Key 发往不同路由。</p></div>
+
+      <section>
+        <h2>1. 让两个请求具有可比性</h2>
+        <p>修改模型或凭据前，并排比较以下字段：</p>
+        <table class="error-table">
+          <thead><tr><th>字段</th><th>HTTP Request 节点</th><th>OpenAI Chat Model 节点</th></tr></thead>
+          <tbody>
+            <tr><td>URL</td><td>文档给出的完整聊天路由</td><td>来自凭据或节点覆盖项的 Base URL</td></tr>
+            <tr><td>模型</td><td>JSON 正文中的准确 ID</td><td>节点选择或输入的准确 ID</td></tr>
+            <tr><td>凭据</td><td>Generic Header Auth 或同类方式</td><td>节点选择的 OpenAI 凭据</td></tr>
+            <tr><td>操作</td><td>一次受控的非流式文本请求</td><td>Chat 或 Responses，以及节点和 Agent 选项</td></tr>
+          </tbody>
+        </table>
+        <p>使用 <code>Reply with OK only.</code> 等合成测试消息，不要把生产提示词或客户数据复制到测试工作流。</p>
+      </section>
+
+      <section>
+        <h2>2. 检查凭据与节点级 Base URL</h2>
+        <p>许多 OpenAI 兼容服务商可以使用以下配置结构：</p>
+        <pre><code>OpenAI 凭据
+  API Key: &lt;AI_API_KEY&gt;
+  Base URL: https://provider.example/v1
+  Organization ID: 除非服务商要求，否则留空
+
+OpenAI Chat Model
+  Model: By ID → exact-public-model-id
+  Options → Base URL: 留空以继承凭据
+  Use Responses API: 初始 Chat Completions 测试时关闭</code></pre>
+        <ol>
+          <li><strong>包含服务商要求的 Base URL 片段。</strong>通常是 <code>/v1</code>，而不是完整的 <code>/chat/completions</code> 路由。</li>
+          <li><strong>检查 <code>Options → Base URL</code>。</strong>节点级值可能覆盖凭据，把同一个 Key 发往其他服务商或路径。</li>
+          <li><strong>必要时直接输入模型 ID。</strong>如果端点不支持 <code>GET /models</code> 或列表不完整，无法从列表选择并不必然代表模型不可用。</li>
+        </ol>
+        <div class="note">n8n 的字段名称和可用选项随版本不同。请以当前安装节点的实际字段为准，不要假定旧截图完全一致。</div>
+      </section>
+
+      <section>
+        <h2>3. 仅在明确支持时启用 Responses</h2>
+        <p>较新的 n8n 节点可能提供 <strong>Use Responses API</strong>。该选项会改变 API 协议，不是单纯的显示偏好。</p>
+        <ul>
+          <li>如果服务商只支持 <code>/chat/completions</code>，保持 Responses 关闭。</li>
+          <li>如果启用，使用相同 Base URL 和准确模型单独验证 <code>/responses</code>。</li>
+          <li>不要假定支持 OpenAI 风格身份验证或模型列表，就意味着同时支持两种生成 API。</li>
+        </ul>
+        <p>真实对比请求可能产生服务商费用。请先查看价格，每次只发送一个最小请求：</p>
+        <pre><code>curl "https://provider.example/v1/chat/completions" \
+  -H "Authorization: Bearer $AI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"exact-public-model-id","messages":[{"role":"user","content":"Reply with OK only."}],"max_tokens":32,"stream":false}'</code></pre>
+      </section>
+
+      <section>
+        <h2>4. 先用简单文本链，再测试 AI Agent</h2>
+        <p>最小 HTTP 请求成功后，在简单文本链中使用相同凭据和模型测试模型节点，暂时关闭流式、工具和结构化输出。</p>
+        <ol>
+          <li>如果简单文本链失败，比较它与 HTTP Request 节点的实际路由和协议。</li>
+          <li>如果简单文本链通过而 AI Agent 失败，每次只恢复工具、JSON 输出或流式中的一项。</li>
+          <li>同时检查协议支持和模型行为。端点可能接受 tools 字段却返回不同的工具调用结构，也可能只是模型没有选择工具。</li>
+        </ol>
+        <div class="warning"><strong>普通文本通过不能证明工具调用、流式或结构化输出可用。</strong>这些能力需要在目标 n8n 工作流中分别验证。</div>
+      </section>
+
+      <section>
+        <h2>5. 防止重试放大故障和费用</h2>
+        <p>模型节点的 <code>Max Retries</code>、节点的 <code>Retry On Fail</code> 设置以及服务商或网关都可能执行重试。一次逻辑操作可能因此变成多次尝试。</p>
+        <ul>
+          <li>定位最初故障时，暂时关闭额外重试。</li>
+          <li>遇到 429，分别检查 RPM、TPM、并发、额度和 <code>Retry-After</code>。</li>
+          <li>解决根因后只恢复确有需要的重试行为。每次尝试都可能计费。</li>
+        </ul>
+        <div class="warning"><strong>安全分享：</strong>从导出的工作流和截图中删除 API Key、凭据 ID、客户数据、提示词、模型输出和内部主机名。只保留 n8n 版本、节点类型、公开模型 ID、HTTP 状态和脱敏路径结构。</div>
+      </section>
+
+      <aside class="cta">
+        <div><h2>无需分享 Key 即可生成配置字段</h2><p>使用不发送请求的 n8n 清单并复制配置模板。API Doctor 不会把 OAuth 令牌或自定义 Key 写入生成配置。</p></div>
+        <div class="cta-actions"><a class="button primary" href="/api-doctor/?client=n8n&amp;symptom=not-found">打开 n8n 清单</a><a class="button secondary" href="/api-doctor/">打开 API Doctor</a></div>
+      </aside>
+
+      <section class="faq">
+        <h2>常见问题</h2>
+        <details><summary>为什么 HTTP Request 节点成功，OpenAI Chat Model 节点却返回 404？</summary><p>HTTP Request 节点使用完整 URL，模型节点则根据凭据、Base URL、模型和 API 选项构造请求。节点覆盖项或 Responses 设置可能生成不同的实际路由。</p></details>
+        <details><summary>所有 OpenAI 兼容服务商都应该启用 Use Responses API 吗？</summary><p>不应该。只有所选服务商和模型支持 <code>/responses</code> 时才启用，否则应先在简单文本链中使用 Chat Completions。</p></details>
+        <details><summary>排障时为什么要检查重试设置？</summary><p>模型节点、工作流设置和网关都可能重试。一次逻辑操作可能变成多个计费请求，也会掩盖最初的故障。</p></details>
+      </section>
+
+      <section class="sources">
+        <h2>来源与延伸阅读</h2>
+        <ul>
+          <li><a href="https://community.n8n.io/t/troubleshooting-checklist-http-request-works-but-my-openai-compatible-model-node-returns-404/328932" target="_blank" rel="noreferrer">n8n 社区：HTTP Request 成功，但模型节点返回 404</a></li>
+          <li><a href="https://community.n8n.io/t/pointing-n8ns-openai-credential-at-any-openai-compatible-endpoint-base-url-model-list-retries/322595" target="_blank" rel="noreferrer">n8n 社区：自定义 Base URL、模型列表与重试</a></li>
+          <li><a href="https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-langchain.openai/" target="_blank" rel="noreferrer">n8n 文档：OpenAI 节点</a></li>
+          <li><a href="https://hefu.hk/docs">合富宝公开 API 文档</a></li>
+        </ul>
+      </section>
+    </article>
+  </main>
+  <footer><span>© 2026 合富宝 API Doctor · 开源、隐私优先的诊断工具</span><span><a href="https://github.com/hefu-hk/hefu-api-doctor">GitHub</a> · <a href="/api-doctor/">客户端配置生成器</a></span></footer>
+</body>
+</html>

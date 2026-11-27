@@ -18,13 +18,25 @@ A local-first browser tool for AI API configuration, model discovery and control
 - Runs one explicitly confirmed live request for OpenAI Chat Completions, OpenAI Responses or Anthropic Messages on HeFu.
 - Supports Chat Completions and Responses checks for custom OpenAI-compatible endpoints, including keyless localhost servers such as Ollama.
 - Limits HeFu protocol choices to the capabilities advertised by the authorized model metadata.
-- Generates configuration for Codex CLI, Claude Code, Cline, cURL, Python and Node.js.
+- Generates configuration for Codex CLI, n8n, Claude Code, Cline, cURL, Python and Node.js.
+- Provides no-request Codex and n8n troubleshooting checklists for 404, authentication, rate-limit and client-only failures.
 - Carries a verified model and protocol into the configuration generator without copying OAuth tokens or custom API keys.
 - Exports a safe JSON report without credentials, endpoint URLs, prompts, model output or raw provider error messages.
 
 The software is open source. Model API usage is not necessarily free: every live check requires explicit confirmation and may be billed by the selected provider. Model discovery and local setup validation do not send a generation request.
 
 ## Quick start
+
+### Troubleshoot a client without a request
+
+1. Open **Troubleshoot an error** and select Codex CLI or n8n.
+2. Choose the observed symptom to get a focused checklist. No endpoint, model ID, credential or network request is required.
+3. Open the full bilingual guide or generate the matching client setup:
+
+   - [Codex custom provider 404: Responses API checklist](https://hefu.hk/api-doctor/guides/codex-responses-404/) · [中文](https://hefu.hk/api-doctor/zh-cn/guides/codex-responses-404/)
+   - [n8n OpenAI-compatible model node 404 checklist](https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/) · [中文](https://hefu.hk/api-doctor/zh-cn/guides/n8n-openai-compatible-404/)
+
+The checklist provides guidance only; it does not claim to have tested the endpoint. Streaming, tool calling and structured output still require separate validation in the target client.
 
 ### Custom or local endpoint
 

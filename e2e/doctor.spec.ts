@@ -56,7 +56,7 @@ test("keeps the workspace compact on desktop and mobile", async ({ page }) => {
 test("publishes answer-ready content and discovery metadata", async ({ page }) => {
   await page.goto("./");
   await expect(page).toHaveTitle("AI API Compatibility Checker | HeFu API Doctor");
-  await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /Chat Completions, Responses and Anthropic Messages/);
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /Codex and n8n troubleshooting guides/);
   await expect(page.locator('link[rel="describedby"]')).toHaveAttribute("href", "/api-doctor/llms.txt");
   await expect(page.locator('link[rel="alternate"][type="text/markdown"]')).toHaveAttribute("href", "/api-doctor/index.md");
   const software = JSON.parse(await page.locator("#software-schema").textContent());
@@ -78,12 +78,75 @@ test("publishes answer-ready content and discovery metadata", async ({ page }) =
     const response = await page.request.get(new URL(resource, page.url()).toString());
     expect(response.ok()).toBe(true);
     if (resource.endsWith(".txt")) expect(await response.text()).toContain("# HeFu API Doctor");
-    if (resource.endsWith(".md")) expect(await response.text()).toContain("## 中文概述");
+    if (resource.endsWith(".md")) {
+      expect(await response.text()).toContain("## 中文概述");
+      expect(await response.text()).toContain("guides/codex-responses-404");
+      expect(await response.text()).toContain("guides/n8n-openai-compatible-404");
+    }
     if (resource.endsWith(".png")) {
       expect(response.headers()["content-type"]).toContain("image/png");
       expect((await response.body()).byteLength).toBeGreaterThan(1000);
     }
   }
+  const sitemap = await page.request.get(new URL("sitemap.xml", page.url()).toString());
+  expect(sitemap.ok()).toBe(true);
+  const sitemapText = await sitemap.text();
+  expect(sitemapText.match(/<loc>/g)).toHaveLength(5);
+  expect(sitemapText).toContain("zh-cn/guides/codex-responses-404/");
+  expect(sitemapText).toContain("zh-cn/guides/n8n-openai-compatible-404/");
+});
+
+test("troubleshoots Codex and n8n locally and generates n8n setup without network calls", async ({ page }) => {
+  await page.goto("./?client=codex&symptom=not-found");
+  await expect(page.getByRole("tab", { name: "Troubleshoot an error" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator(".advice-card h3")).toHaveText("Codex returns 404 with a custom provider");
+  await expect(page.locator(".advice-card")).toContainText("wire_api = \"responses\"");
+  const requests: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  await page.getByRole("combobox", { name: "Client", exact: true }).selectOption("n8n");
+  await page.getByRole("combobox", { name: "What are you seeing?" }).selectOption("client-only");
+  await expect(page.locator(".advice-card h3")).toHaveText("The HTTP Request node works but the model node fails");
+  await expect(page.locator(".advice-card")).toContainText("simple text chain");
+  await page.getByRole("button", { name: "Generate client setup", exact: true }).click();
+  await page.getByLabel("Model ID").fill("demo-n8n");
+  await expect(page.locator("pre")).toContainText("Model: By ID → demo-n8n");
+  await expect(page.locator("pre")).toContainText("Use Responses API: Off");
+  await expect(page.locator("pre")).not.toContainText("test-access-token");
+  await page.getByRole("combobox", { name: "Protocol", exact: true }).selectOption("responses");
+  await expect(page.locator("pre")).toContainText("Use Responses API: On");
+  expect(requests).toEqual([]);
+});
+
+test("publishes crawlable bilingual client guides with matching metadata", async ({ page }) => {
+  const guides = [
+    { path: "guides/codex-responses-404/index.html", lang: "en", heading: "Codex custom provider returns 404: check Responses first", canonical: "https://hefu.hk/api-doctor/guides/codex-responses-404/" },
+    { path: "zh-cn/guides/codex-responses-404/index.html", lang: "zh-CN", heading: "Codex 自定义 Provider 返回 404：优先检查 Responses", canonical: "https://hefu.hk/api-doctor/zh-cn/guides/codex-responses-404/" },
+    { path: "guides/n8n-openai-compatible-404/index.html", lang: "en", heading: "HTTP Request works, but the n8n model node returns 404", canonical: "https://hefu.hk/api-doctor/guides/n8n-openai-compatible-404/" },
+    { path: "zh-cn/guides/n8n-openai-compatible-404/index.html", lang: "zh-CN", heading: "HTTP Request 成功，但 n8n 模型节点返回 404", canonical: "https://hefu.hk/api-doctor/zh-cn/guides/n8n-openai-compatible-404/" },
+  ];
+  for (const guide of guides) {
+    await page.goto(`./${guide.path}`);
+    await expect(page.locator("html")).toHaveAttribute("lang", guide.lang);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(guide.heading);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", guide.canonical);
+    await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveCount(1);
+    await expect(page.locator('link[rel="alternate"][hreflang="zh-CN"]')).toHaveCount(1);
+    const schema = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
+    expect(schema["@graph"].map((item: { "@type": string }) => item["@type"])).toEqual(["TechArticle", "FAQPage"]);
+    await expect(page.locator(".faq details")).toHaveCount(3);
+    await page.setViewportSize({ width: 375, height: 812 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  }
+});
+
+test("guide CTA preselects only allowlisted troubleshooting values", async ({ page }) => {
+  await page.goto("./guides/codex-responses-404/index.html");
+  await page.getByRole("link", { name: "Open Codex checklist", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "Troubleshoot an error" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("combobox", { name: "Client", exact: true })).toHaveValue("codex");
+  await expect(page.getByRole("combobox", { name: "What are you seeing?" })).toHaveValue("not-found");
+  expect(page.url()).not.toContain("base_url");
+  expect(page.url()).not.toContain("api_key");
 });
 
 test("custom endpoint check sends one request and exports a credential-free report", async ({ page }) => {

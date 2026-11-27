@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f7f7" />
+  <meta name="description" content="排查 Codex CLI 自定义 Provider 404：检查 Responses API 支持、base_url、准确模型 ID、凭据与速率限制，避免无效更换 Key。" />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
+  <link rel="canonical" href="https://hefu.hk/api-doctor/zh-cn/guides/codex-responses-404/" />
+  <link rel="alternate" hreflang="en" href="https://hefu.hk/api-doctor/guides/codex-responses-404/" />
+  <link rel="alternate" hreflang="zh-CN" href="https://hefu.hk/api-doctor/zh-cn/guides/codex-responses-404/" />
+  <link rel="alternate" hreflang="x-default" href="https://hefu.hk/api-doctor/guides/codex-responses-404/" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="合富宝 API Doctor" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:title" content="Codex 自定义 Provider 返回 404：Responses 检查清单" />
+  <meta property="og:description" content="解释 cURL 成功但 Codex 返回 404 的原因，并分步检查 base_url、Responses 支持和模型权限。" />
+  <meta property="og:url" content="https://hefu.hk/api-doctor/zh-cn/guides/codex-responses-404/" />
+  <meta property="og:image" content="https://hefu.hk/api-doctor/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="/api-doctor/favicon.svg" />
+  <link rel="stylesheet" href="/api-doctor/guides/guide.css" />
+  <title>Codex 自定义 Provider 返回 404：Responses 检查清单 | 合富宝 API Doctor</title>
+  <script type="application/ld+json">
+    {"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"Codex 自定义 Provider 返回 404：优先检查 Responses","description":"通过 Responses API 支持、base_url 和准确模型 ID 排查 Codex CLI 自定义 Provider 404。","datePublished":"2026-11-27","dateModified":"2026-11-27","inLanguage":"zh-CN","mainEntityOfPage":"https://hefu.hk/api-doctor/zh-cn/guides/codex-responses-404/","author":{"@type":"Organization","name":"HeFu","url":"https://hefu.hk/"},"publisher":{"@type":"Organization","name":"HeFu","url":"https://hefu.hk/"},"isAccessibleForFree":true},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Codex 自定义模型提供方支持 Chat Completions 吗？","acceptedAnswer":{"@type":"Answer","text":"不支持。当前 Codex 文档仅列出 responses 作为自定义模型提供方的 wire_api 值。Chat Completions 请求成功不能证明 Codex 兼容。"}},{"@type":"Question","name":"base_url 应该包含 /responses 吗？","acceptedAnswer":{"@type":"Answer","text":"通常不应包含。填写通常以 /v1 结尾的服务商 Base URL，由 Codex 构造 Responses 路径。特殊部署路由以服务商文档为准。"}},{"@type":"Question","name":"非流式请求成功能证明支持流式和工具调用吗？","acceptedAnswer":{"@type":"Answer","text":"不能。流式帧、工具调用字段和模型行为需要在目标客户端中单独验证。基础响应契约通过只是第一步。"}}]}]}
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/api-doctor/"><img src="/api-doctor/favicon.svg" alt="" width="30" height="30" /><span>合富宝 API Doctor</span></a>
+    <nav class="header-nav" aria-label="页面导航"><a href="/api-doctor/">打开工具</a><a class="language-link" href="/api-doctor/guides/codex-responses-404/" hreflang="en" lang="en">English</a></nav>
+  </header>
+  <main>
+    <nav class="breadcrumb" aria-label="面包屑"><a href="/api-doctor/">API Doctor</a><span>→</span><span>Codex Responses 404</span></nav>
+    <article>
+      <header class="article-header">
+        <span class="kicker">Codex CLI · 自定义 Provider · 404</span>
+        <h1>Codex 自定义 Provider 返回 404：优先检查 Responses</h1>
+        <p class="lede">API Key 有效或 Chat Completions 的 cURL 请求成功，并不足以保证 Codex 可用。更换凭据前，先用本清单对比协议、Base URL 和模型 ID。</p>
+        <div class="article-meta">更新于 2026-11-27 · 约 7 分钟 · 检查清单不需要凭据</div>
+      </header>
+
+      <div class="quick-answer"><strong>快速结论</strong><p>当前 Codex 自定义模型提供方仅支持 <strong>Responses API</strong>。如果服务商只提供 <code>/chat/completions</code>，即使同一模型能通过 cURL 或 SDK 调用，Codex 仍可能返回 404。</p></div>
+
+      <section>
+        <h2>1. 确认 Codex 实际需要的协议</h2>
+        <p><a class="inline-link" href="https://developers.openai.com/codex/config-reference" target="_blank" rel="noreferrer">Codex 官方配置参考</a>仅列出 <code>responses</code> 作为自定义模型提供方的 <code>wire_api</code> 值。把配置改成 Chat Completions 并不是受支持的解决方案。</p>
+        <p>这可以解释常见的分裂结果：</p>
+        <ul>
+          <li><code>POST /v1/chat/completions</code> 在 cURL 或 Python 中成功。</li>
+          <li>Codex 请求 <code>POST /v1/responses</code> 并收到 404。</li>
+          <li>API Key 和模型可能都有效，但客户端所需的 API 协议不存在。</li>
+        </ul>
+        <div class="note"><strong>不要把所有 404 都当作凭据问题。</strong>先识别实际路径和协议。反复更换 Key 不可能为仅支持 Chat 的端点增加 Responses 能力。</div>
+      </section>
+
+      <section>
+        <h2>2. 检查 <code>base_url</code>、<code>wire_api</code> 和模型 ID</h2>
+        <p>应填写服务商 Base URL，而不是完整请求路径。许多 OpenAI 兼容服务商的 Base URL 以 <code>/v1</code> 结尾，Codex 会继续拼接 Responses 路由。</p>
+        <pre><code>model = "exact-public-model-id"
+model_provider = "custom"
+
+[model_providers.custom]
+name = "Custom OpenAI-compatible"
+base_url = "https://provider.example/v1"
+wire_api = "responses"
+env_key = "AI_API_KEY"</code></pre>
+        <ol>
+          <li><strong>删除重复的端点片段。</strong>除非服务商明确文档说明特殊部署路由，否则 Base URL 不应以 <code>/responses</code> 或 <code>/chat/completions</code> 结尾。</li>
+          <li><strong>使用准确的公开模型 ID。</strong>显示名称、别名或 Azure 部署名称不能直接等同于其他服务商的模型 ID。</li>
+          <li><strong>Key 只放在环境变量中。</strong><code>env_key</code> 表示环境变量名称，TOML 文件不应包含真实密钥。</li>
+        </ol>
+        <p>在启动 Codex 的同一终端、容器或服务环境中设置 <code>AI_API_KEY</code>，修正后重新启动进程。</p>
+      </section>
+
+      <section>
+        <h2>3. 对比一次 Responses 请求，而不只检查 Chat</h2>
+        <p>如果决定执行真实请求，请先查看服务商价格。以下最小请求可能计费，使用非流式 Responses 和较小的输出上限：</p>
+        <pre><code>curl "https://provider.example/v1/responses" \
+  -H "Authorization: Bearer $AI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"exact-public-model-id","input":"Reply with OK only.","max_output_tokens":32,"stream":false}'</code></pre>
+        <p>有效响应应采用 Responses 对象结构，并包含带 <code>output_text</code> 部分的消息。只有 HTTP 200，但载荷为空或结构无关，也不能算通过。</p>
+        <div class="warning"><strong>隐私：</strong>不要把真实 Key、访问令牌、提示词、响应正文或内部网关 URL 粘贴到 GitHub Issue 或支持工单。只提供 HTTP 状态、公开模型 ID、客户端版本和脱敏后的路径结构。</div>
+      </section>
+
+      <section>
+        <h2>4. 正确理解下一个错误</h2>
+        <table class="error-table">
+          <thead><tr><th>观察到的结果</th><th>最有用的下一项检查</th></tr></thead>
+          <tbody>
+            <tr><td><code>/responses</code> 返回 404</td><td>Responses 可用性、Base URL 拼接和准确模型 ID。Chat 成功不能解决此问题。</td></tr>
+            <tr><td>401</td><td>Codex 进程实际读取的 Key。修正 <code>env_key</code>、更新凭据并重启 Codex。</td></tr>
+            <tr><td>403</td><td>模型权限、应用模型池和账号审批。修改 URL 不会增加访问权限。</td></tr>
+            <tr><td>429</td><td>RPM、TPM、并发、可用额度和 <code>Retry-After</code>。避免手动与自动重试叠加。</td></tr>
+            <tr><td>cURL 返回 200，Codex 仍失败</td><td>流式与工具行为、额外客户端选项，以及 Codex 下一步操作需要的响应字段。</td></tr>
+          </tbody>
+        </table>
+        <p>为了进行干净对照，先用一个最小 Codex 提示词测试，再接入自定义工具或 MCP Server。每次只恢复一项所需能力。</p>
+      </section>
+
+      <section>
+        <h2>5. 明确基础兼容检查不能证明什么</h2>
+        <p>非流式 Responses 通过只验证一次响应契约，<strong>不能</strong>证明流式事件、工具调用、结构化输出、模型质量或生产可靠性。请在真实集成中分别验证。</p>
+        <p>如果服务商不支持 Responses，正确做法是更换支持目标客户端的服务商或模型，而不是用无关的 Chat 配置掩盖不兼容。</p>
+      </section>
+
+      <aside class="cta">
+        <div><h2>在下一个请求前先检查配置</h2><p>使用不发送请求的 Codex 清单，必要时再明确确认计费并验证一次 Responses 请求。</p></div>
+        <div class="cta-actions"><a class="button primary" href="/api-doctor/?client=codex&amp;symptom=not-found">打开 Codex 清单</a><a class="button secondary" href="/api-doctor/">打开 API Doctor</a></div>
+      </aside>
+
+      <section class="faq">
+        <h2>常见问题</h2>
+        <details><summary>Codex 自定义模型提供方支持 Chat Completions 吗？</summary><p>不支持。当前 Codex 文档仅列出 <code>responses</code> 作为自定义模型提供方的 <code>wire_api</code> 值。Chat Completions 请求成功不能证明 Codex 兼容。</p></details>
+        <details><summary>base_url 应该包含 /responses 吗？</summary><p>通常不应包含。填写通常以 <code>/v1</code> 结尾的服务商 Base URL，由 Codex 构造 Responses 路径。特殊部署路由以服务商文档为准。</p></details>
+        <details><summary>非流式请求成功能证明支持流式和工具调用吗？</summary><p>不能。流式帧、工具调用字段和模型行为需要在目标客户端中单独验证。基础响应契约通过只是第一步。</p></details>
+      </section>
+
+      <section class="sources">
+        <h2>来源与延伸阅读</h2>
+        <ul>
+          <li><a href="https://developers.openai.com/codex/config-reference" target="_blank" rel="noreferrer">OpenAI：Codex 配置参考</a></li>
+          <li><a href="https://github.com/openai/codex/issues/2025" target="_blank" rel="noreferrer">Codex Issue #2025：Chat 成功而 Responses 返回 404</a></li>
+          <li><a href="https://hefu.hk/docs">合富宝公开 API 文档</a></li>
+        </ul>
+      </section>
+    </article>
+  </main>
+  <footer><span>© 2026 合富宝 API Doctor · 开源、隐私优先的诊断工具</span><span><a href="https://github.com/hefu-hk/hefu-api-doctor">GitHub</a> · <a href="/api-doctor/">客户端配置生成器</a></span></footer>
+</body>
+</html>
