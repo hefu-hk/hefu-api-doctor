@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-11-27
+
+- Add no-request Codex CLI and n8n troubleshooting for 404, authentication, rate-limit and client-only failures in English and Simplified Chinese.
+- Add n8n OpenAI credential and Chat Model configuration guidance with Chat/Responses selection and retry-cost warnings.
+- Add four crawlable static troubleshooting guides with canonical, hreflang, Open Graph and TechArticle/FAQ structured data.
+- Add guide links to the workspace, sitemap, `llms.txt` and Markdown product overview; preserve explicit billing confirmation and existing diagnostic behavior.
+- Add unit and browser coverage for localized checklists, n8n configuration, guide metadata, static assets and no-request behavior.
+
 ## 0.2.2 — 2026-11-25
 
 - Refocus the hero and bilingual interface copy on direct user outcomes, with a smaller 36/26 px display hierarchy.

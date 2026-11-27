@@ -1,7 +1,7 @@
 import { doctorConfig } from "../config";
 import type { ConnectionKind, Protocol } from "../types";
 
-export type ClientTarget = "curl" | "python" | "nodejs" | "codex" | "claude-code" | "cline";
+export type ClientTarget = "curl" | "python" | "nodejs" | "codex" | "claude-code" | "cline" | "n8n";
 
 export interface ConfigInput {
   target: ClientTarget;
@@ -15,6 +15,7 @@ export function effectiveClientProtocol(target: ClientTarget, requested: Protoco
   if (target === "codex") return "responses";
   if (target === "claude-code") return "anthropic";
   if (target === "cline") return "chat";
+  if (target === "n8n" && requested === "anthropic") return "chat";
   return requested;
 }
 
@@ -44,6 +45,10 @@ export function generateClientConfig(input: ConfigInput): string {
   }
   if (input.target === "cline") {
     return JSON.stringify({ apiProvider: "openai", openAiBaseUrl: base, openAiApiKey: `<${key}>`, openAiModelId: model }, null, 2);
+  }
+  if (input.target === "n8n") {
+    const responses = input.protocol === "responses";
+    return `OpenAI credential\n  API Key: <${key}>\n  Base URL: ${base}\n  Organization ID: leave empty unless your provider requires it\n\nOpenAI Chat Model\n  Model: By ID → ${model}\n  Options → Base URL: leave empty to inherit the credential\n  Use Responses API: ${responses ? "On (only if /responses is supported)" : "Off (use Chat Completions)"}\n\nStart with a simple text chain. Add tools, structured output and streaming one at a time.`;
   }
   const path = input.protocol === "chat" ? "chat/completions" : input.protocol === "responses" ? "responses" : "messages";
   const body = input.protocol === "chat"

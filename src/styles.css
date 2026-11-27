@@ -74,7 +74,7 @@ p.muted { margin: 8px 0; }
 .button.secondary:hover:not(:disabled) { background: #f3f7f7; border-color: #bdcece; }
 .button.full { width: 100%; }
 .form-grid { display: grid; gap: 12px; }
-.form-grid label { display: grid; gap: 5px; color: #354e57; font-size: 12px; font-weight: 650; }
+.form-grid label, .troubleshoot-controls label { display: grid; gap: 5px; color: #354e57; font-size: 12px; font-weight: 650; }
 input, select { width: 100%; min-height: 38px; border: 1px solid #cbd9d9; background: white; border-radius: 7px; padding: 8px 10px; color: var(--ink); font-size: 13px; }
 input::placeholder { color: #8b9da2; }
 input:hover, select:hover { border-color: #9fb9b7; }
@@ -119,7 +119,25 @@ p.notice { margin: 10px 0 0; }
 .result-detail p { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 8px 0; }
 .result-actions { margin: 18px 0 10px; }
 
-.config-panel { margin-bottom: 20px; }
+.config-panel, .troubleshoot-panel { margin-bottom: 20px; }
+.troubleshoot-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 720px; margin: 18px 0; }
+.advice-card { max-width: 880px; border-top: 1px solid var(--line); padding-top: 18px; }
+.advice-card .eyebrow { text-transform: none; letter-spacing: .02em; }
+.advice-card h3 { margin: 14px 0 8px; color: var(--ink); font-size: 18px; line-height: 1.4; }
+.advice-card p { max-width: 760px; color: var(--muted); margin: 0 0 12px; font-size: 13px; line-height: 1.65; }
+.advice-card ol { max-width: 780px; margin: 0 0 18px; padding-left: 22px; color: #354e57; }
+.advice-card li { padding-left: 4px; margin: 9px 0; line-height: 1.65; font-size: 13px; }
+.guides-section { margin: 28px 0 0; }
+.section-heading { max-width: 780px; }
+.section-heading h2 { font-size: 17px; margin: 0 0 6px; }
+.section-heading p { margin: 0; }
+.guides-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.guide-card { display: block; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.guide-card:hover { border-color: #9fc5bd; box-shadow: 0 4px 18px rgba(18,48,55,.05); }
+.guide-card > span { color: var(--teal-dark); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.guide-card h3 { color: var(--ink); font-size: 15px; line-height: 1.45; margin: 8px 0; }
+.guide-card p { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 0 0 12px; }
+.guide-card strong { color: var(--teal-dark); font-size: 12px; }
 .config-intro { max-width: 800px; }
 .config-intro h2 { font-size: 17px; margin-bottom: 6px; }
 .config-intro p { margin-top: 0; }
@@ -172,7 +190,8 @@ footer { border-top: 1px solid var(--line); padding: 18px max(20px, calc((100% -
   .metric-grid { gap: 6px; }
   .metric-grid div { padding: 9px 8px; }
   .metric-grid strong { font-size: 12px; }
-  .config-controls, .faq-list { grid-template-columns: 1fr; }
+  .config-controls, .faq-list, .guides-grid, .troubleshoot-controls { grid-template-columns: 1fr; }
+  .workspace-tabs button { min-width: 0; line-height: 1.35; text-align: center; }
   .privacy-section { margin: 26px 0 20px; }
   .faq-list { gap: 0; }
   footer { flex-direction: column; padding: 16px 12px; gap: 8px; }

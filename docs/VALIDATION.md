@@ -61,6 +61,17 @@ All automated external API calls were mocked. No automated test incurred model c
 - `npm audit` against the official npm registry: **0 vulnerabilities** at validation time.
 - This release changes presentation and layout tests only. Automated checks and the refreshed demo used mocks; **no additional real model request or cost was incurred**.
 
+## 2026-11-27 version 0.3.0 client troubleshooting and guides
+
+- Added no-request Codex CLI and n8n checklists for 404, authentication, rate-limit and client-only failures in English and Simplified Chinese. Unit coverage verifies all 16 client/symptom/language combinations and allowlisted URL preselection.
+- Added n8n OpenAI credential and Chat Model configuration output, including Chat/Responses selection, node-level Base URL guidance and retry-cost warnings.
+- Added four crawlable static guides with canonical, hreflang, Open Graph and TechArticle/FAQ structured data. Updated the sitemap, `llms.txt`, Markdown overview and workspace guide links.
+- Unit tests: **44 passed** across seven test files. Development-server Chromium E2E: **14 passed**. Production-build preview Chromium E2E: **14 passed**.
+- Browser coverage verifies zero network requests while troubleshooting and generating n8n setup, guide CTA preselection, all four static guide pages, structured data, responsive layout and existing OAuth/Mock diagnostics.
+- Visual matrix: **40 page/language/viewport combinations** at **320, 375, 768, 1024 and 1440 px**, with no horizontal overflow or browser page errors. Desktop and mobile screenshots were reviewed.
+- Production build passed. `npm audit` against the official npm registry: **0 vulnerabilities**. `git diff --check` and public-file sensitive-information scans passed; only documented placeholder OAuth IDs matched the token-shaped string check.
+- All automated external API calls were mocked. **No real model request or model cost was incurred** for this release.
+
 ## 2026-11-25 version 0.2.2 content and discovery refinement
 
 - Refocused the hero on the direct user outcome: “Verify your AI API before you run into issues.” / “在你遇到问题前，先验证 AI API。” Reduced display typography to **36 px desktop / 26 px mobile** and balanced mobile wrapping.

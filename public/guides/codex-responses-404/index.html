@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f7f7" />
+  <meta name="description" content="Fix Codex CLI custom provider 404 errors. Check Responses API support, base_url, exact model IDs, credentials and rate limits with a privacy-first checklist." />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
+  <link rel="canonical" href="https://hefu.hk/api-doctor/guides/codex-responses-404/" />
+  <link rel="alternate" hreflang="en" href="https://hefu.hk/api-doctor/guides/codex-responses-404/" />
+  <link rel="alternate" hreflang="zh-CN" href="https://hefu.hk/api-doctor/zh-cn/guides/codex-responses-404/" />
+  <link rel="alternate" hreflang="x-default" href="https://hefu.hk/api-doctor/guides/codex-responses-404/" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="HeFu API Doctor" />
+  <meta property="og:title" content="Codex custom provider 404: Responses API checklist" />
+  <meta property="og:description" content="Why cURL can work while Codex returns 404, and how to check base_url, Responses support and model access." />
+  <meta property="og:url" content="https://hefu.hk/api-doctor/guides/codex-responses-404/" />
+  <meta property="og:image" content="https://hefu.hk/api-doctor/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="/api-doctor/favicon.svg" />
+  <link rel="stylesheet" href="/api-doctor/guides/guide.css" />
+  <title>Codex Custom Provider 404: Responses API Checklist | HeFu API Doctor</title>
+  <script type="application/ld+json">
+    {"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"Codex custom provider 404: Responses API checklist","description":"Fix Codex CLI custom provider 404 errors by checking Responses API support, base_url and the exact model ID.","datePublished":"2026-11-27","dateModified":"2026-11-27","inLanguage":"en","mainEntityOfPage":"https://hefu.hk/api-doctor/guides/codex-responses-404/","author":{"@type":"Organization","name":"HeFu","url":"https://hefu.hk/"},"publisher":{"@type":"Organization","name":"HeFu","url":"https://hefu.hk/"},"isAccessibleForFree":true},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does Codex support Chat Completions for custom model providers?","acceptedAnswer":{"@type":"Answer","text":"No. Current Codex documentation lists responses as the only supported wire_api value for custom model providers. A working Chat Completions request does not prove Codex compatibility."}},{"@type":"Question","name":"Should base_url include /responses?","acceptedAnswer":{"@type":"Answer","text":"Usually no. Enter the provider base URL, commonly ending in /v1, and let Codex construct the Responses route. Check your provider documentation for deployment-specific exceptions."}},{"@type":"Question","name":"Does a successful non-streaming request prove streaming and tool support?","acceptedAnswer":{"@type":"Answer","text":"No. Streaming frames, tool-call fields and model behavior need separate checks in the target client. A basic response-contract pass is only a first step."}}]}]}
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/api-doctor/"><img src="/api-doctor/favicon.svg" alt="" width="30" height="30" /><span>HeFu API Doctor</span></a>
+    <nav class="header-nav" aria-label="Page navigation"><a href="/api-doctor/">Open the tool</a><a class="language-link" href="/api-doctor/zh-cn/guides/codex-responses-404/" hreflang="zh-CN" lang="zh-CN">中文</a></nav>
+  </header>
+  <main>
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/api-doctor/">API Doctor</a><span>→</span><span>Codex Responses 404</span></nav>
+    <article>
+      <header class="article-header">
+        <span class="kicker">Codex CLI · Custom provider · 404</span>
+        <h1>Codex custom provider returns 404: check Responses first</h1>
+        <p class="lede">A working API key or Chat Completions cURL request is not enough for Codex. Use this checklist to compare the protocol, Base URL and model ID before changing credentials.</p>
+        <div class="article-meta">Updated 2026-11-27 · 7 minute read · No credentials required for the checklist</div>
+      </header>
+
+      <div class="quick-answer"><strong>Quick answer</strong><p>Current Codex custom model providers support only the <strong>Responses API</strong>. If your provider exposes only <code>/chat/completions</code>, Codex can return 404 even when the same model works through cURL or an SDK.</p></div>
+
+      <section>
+        <h2>1. Confirm the protocol Codex expects</h2>
+        <p>The <a class="inline-link" href="https://developers.openai.com/codex/config-reference" target="_blank" rel="noreferrer">official Codex configuration reference</a> lists <code>responses</code> as the only supported <code>wire_api</code> value for custom model providers. Changing the configuration to Chat Completions is not a supported workaround.</p>
+        <p>This explains the common split result:</p>
+        <ul>
+          <li><code>POST /v1/chat/completions</code> works in cURL or Python.</li>
+          <li>Codex requests <code>POST /v1/responses</code> and receives 404.</li>
+          <li>The API key and model may be valid; the required API surface is missing.</li>
+        </ul>
+        <div class="note"><strong>Do not treat every 404 as a credentials problem.</strong> First identify the effective path and protocol. Repeatedly rotating keys cannot add Responses support to a Chat-only endpoint.</div>
+      </section>
+
+      <section>
+        <h2>2. Check <code>base_url</code>, <code>wire_api</code> and the model ID</h2>
+        <p>Use the provider base URL—not a full request path. For many OpenAI-compatible providers, the base ends in <code>/v1</code>. Codex appends the Responses route.</p>
+        <pre><code>model = "exact-public-model-id"
+model_provider = "custom"
+
+[model_providers.custom]
+name = "Custom OpenAI-compatible"
+base_url = "https://provider.example/v1"
+wire_api = "responses"
+env_key = "AI_API_KEY"</code></pre>
+        <ol>
+          <li><strong>Remove duplicated endpoint segments.</strong> Do not use a Base URL ending in <code>/responses</code> or <code>/chat/completions</code> unless the provider explicitly documents a deployment-specific route.</li>
+          <li><strong>Use the exact public model ID.</strong> A display name, alias or Azure deployment name is not automatically interchangeable with another provider's model ID.</li>
+          <li><strong>Keep the key in the environment.</strong> <code>env_key</code> names the environment variable; the TOML file should not contain the actual secret.</li>
+        </ol>
+        <p>Set <code>AI_API_KEY</code> in the same terminal, container or service runtime that starts Codex, then restart the process after correcting it.</p>
+      </section>
+
+      <section>
+        <h2>3. Compare one Responses request—not only Chat</h2>
+        <p>If you choose to run a live request, first review the provider's price. The following minimal request may be billable. It uses a non-streaming Responses call and a small output cap:</p>
+        <pre><code>curl "https://provider.example/v1/responses" \
+  -H "Authorization: Bearer $AI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"exact-public-model-id","input":"Reply with OK only.","max_output_tokens":32,"stream":false}'</code></pre>
+        <p>A valid response should use the Responses object structure and contain a message with an <code>output_text</code> part. HTTP 200 with an empty or unrelated payload is not enough.</p>
+        <div class="warning"><strong>Privacy:</strong> do not paste real keys, access tokens, prompts, response bodies or internal gateway URLs into GitHub Issues or support tickets. Share only HTTP status, public model ID, client version and a redacted route shape.</div>
+      </section>
+
+      <section>
+        <h2>4. Read the next error correctly</h2>
+        <table class="error-table">
+          <thead><tr><th>Observed result</th><th>Most useful next check</th></tr></thead>
+          <tbody>
+            <tr><td>404 on <code>/responses</code></td><td>Responses availability, Base URL construction and exact model ID. Chat success does not resolve this.</td></tr>
+            <tr><td>401</td><td>The key visible to the Codex process. Correct <code>env_key</code>, renew the credential and restart Codex.</td></tr>
+            <tr><td>403</td><td>Model entitlements, application model pools and account approval. A URL change does not grant access.</td></tr>
+            <tr><td>429</td><td>RPM, TPM, concurrency, usable quota and <code>Retry-After</code>. Avoid repeated manual and automatic retries.</td></tr>
+            <tr><td>200 in cURL, failure in Codex</td><td>Streaming and tool behavior, extra client options and the exact response fields required by the next Codex operation.</td></tr>
+          </tbody>
+        </table>
+        <p>For a clean comparison, start with one minimal Codex prompt before adding custom tools or MCP servers. Reintroduce required capabilities one at a time.</p>
+      </section>
+
+      <section>
+        <h2>5. Know what a basic compatibility check cannot prove</h2>
+        <p>A non-streaming Responses pass verifies one response contract. It does <strong>not</strong> prove streaming event compatibility, tool calling, structured output, model quality or production reliability. Test those separately in your own integration.</p>
+        <p>If the provider does not support Responses, the correct resolution is to use a provider or model that supports the client you need—not to hide the incompatibility behind an unrelated Chat configuration.</p>
+      </section>
+
+      <aside class="cta">
+        <div><h2>Check the setup before another request</h2><p>Use the no-request Codex checklist, then optionally validate one Responses request with explicit billing confirmation.</p></div>
+        <div class="cta-actions"><a class="button primary" href="/api-doctor/?client=codex&amp;symptom=not-found">Open Codex checklist</a><a class="button secondary" href="/api-doctor/">Open API Doctor</a></div>
+      </aside>
+
+      <section class="faq">
+        <h2>Common questions</h2>
+        <details><summary>Does Codex support Chat Completions for custom model providers?</summary><p>No. Current Codex documentation lists <code>responses</code> as the only supported <code>wire_api</code> value for custom model providers. A working Chat Completions request does not prove Codex compatibility.</p></details>
+        <details><summary>Should base_url include /responses?</summary><p>Usually no. Enter the provider base URL, commonly ending in <code>/v1</code>, and let Codex construct the Responses route. Check your provider documentation for deployment-specific exceptions.</p></details>
+        <details><summary>Does a successful non-streaming request prove streaming and tool support?</summary><p>No. Streaming frames, tool-call fields and model behavior need separate checks in the target client. A basic response-contract pass is only a first step.</p></details>
+      </section>
+
+      <section class="sources">
+        <h2>Sources and further reading</h2>
+        <ul>
+          <li><a href="https://developers.openai.com/codex/config-reference" target="_blank" rel="noreferrer">OpenAI: Codex configuration reference</a></li>
+          <li><a href="https://github.com/openai/codex/issues/2025" target="_blank" rel="noreferrer">Codex issue #2025: Chat works while Responses returns 404</a></li>
+          <li><a href="https://hefu.hk/docs">HeFu public API documentation</a></li>
+        </ul>
+      </section>
+    </article>
+  </main>
+  <footer><span>© 2026 HeFu API Doctor · Open-source, privacy-first diagnostics</span><span><a href="https://github.com/hefu-hk/hefu-api-doctor">GitHub</a> · <a href="/api-doctor/">Client configuration generator</a></span></footer>
+</body>
+</html>
